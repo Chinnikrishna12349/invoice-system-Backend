@@ -1,0 +1,24 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[remote "origin"]
+	url = https://github.com/Chinnikrishna12349/invoice-system-backend.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+	vscode-merge-base = origin/main
+[branch "feature/pdf-fixes-sync"]
+	vscode-merge-base = origin/main
+[branch "temp-push-fix"]
+	vscode-merge-base = origin/main
+[branch "updates-feb-02"]
+	vscode-merge-base = origin/main
+[branch "updates-feb-05"]
+	vscode-merge-base = origin/main
+[branch "final-customizations-feb-05"]
+	vscode-merge-base = origin/main

@@ -1,0 +1,6 @@
+0000000000000000000000000000000000000000 6975bad48a5330729720d115cbdb70a27671eb06 Invoice System Dev <dev@invoice-system.local> 1770900038 +0530	commit (initial): Initial commit to clean backend repo
+6975bad48a5330729720d115cbdb70a27671eb06 6975bad48a5330729720d115cbdb70a27671eb06 Invoice System Dev <dev@invoice-system.local> 1770900043 +0530	Branch: renamed refs/heads/master to refs/heads/main
+6975bad48a5330729720d115cbdb70a27671eb06 b4ddf31586775fb4b04bae32acd3ce1d99125b14 Invoice System Dev <dev@invoice-system.local> 1770900137 +0530	commit: Clean backend commit (ignored uploads/logs)
+b4ddf31586775fb4b04bae32acd3ce1d99125b14 cf55c7de0d753372d3f5e63b928608be9e0fc399 Invoice System Dev <dev@invoice-system.local> 1770900389 +0530	commit (amend): Initial commit (Removed .env and secrets)
+cf55c7de0d753372d3f5e63b928608be9e0fc399 6975bad48a5330729720d115cbdb70a27671eb06 Invoice System Dev <dev@invoice-system.local> 1770900443 +0530	reset: moving to HEAD~1
+6975bad48a5330729720d115cbdb70a27671eb06 289a7e7dd1596471dbd4eda3bc3ceb379d8df16a Invoice System Dev <dev@invoice-system.local> 1770900455 +0530	commit: Initial backend commit (No secrets)
