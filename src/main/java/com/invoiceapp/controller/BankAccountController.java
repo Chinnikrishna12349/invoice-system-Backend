@@ -16,29 +16,57 @@ public class BankAccountController {
     private BankAccountService bankAccountService;
 
     @GetMapping
-    public List<BankAccount> getBankAccounts(@RequestParam(required = false) String userId) {
-        return bankAccountService.getBankAccountsByUserId(userId);
+    public ResponseEntity<?> getBankAccounts(@RequestParam(required = false) String userId) {
+        try {
+            System.out.println("Fetching bank accounts for userId: " + userId);
+            List<BankAccount> accounts = bankAccountService.getBankAccountsByUserId(userId);
+            return ResponseEntity.ok(accounts);
+        } catch (Exception e) {
+            System.err.println("Error fetching bank accounts: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error fetching bank accounts: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BankAccount> getBankAccountById(@PathVariable String id) {
-        return ResponseEntity.ok(bankAccountService.getBankAccountById(id));
+    public ResponseEntity<?> getBankAccountById(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(bankAccountService.getBankAccountById(id));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error getting bank account: " + e.getMessage());
+        }
     }
 
     @PostMapping
-    public BankAccount saveBankAccount(@RequestBody BankAccount bankAccount) {
-        return bankAccountService.saveBankAccount(bankAccount);
+    public ResponseEntity<?> saveBankAccount(@RequestBody BankAccount bankAccount) {
+        try {
+            System.out.println("Saving bank account for userId: " + bankAccount.getUserId());
+            BankAccount saved = bankAccountService.saveBankAccount(bankAccount);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            System.err.println("Error saving bank account: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error saving bank account: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BankAccount> updateBankAccount(@PathVariable String id,
+    public ResponseEntity<?> updateBankAccount(@PathVariable String id,
             @RequestBody BankAccount bankAccount) {
-        return ResponseEntity.ok(bankAccountService.updateBankAccount(id, bankAccount));
+        try {
+            return ResponseEntity.ok(bankAccountService.updateBankAccount(id, bankAccount));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating bank account: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBankAccount(@PathVariable String id) {
-        bankAccountService.deleteBankAccount(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> deleteBankAccount(@PathVariable String id) {
+        try {
+            bankAccountService.deleteBankAccount(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error deleting bank account: " + e.getMessage());
+        }
     }
 }
