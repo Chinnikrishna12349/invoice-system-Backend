@@ -24,6 +24,7 @@ import com.itextpdf.kernel.colors.ColorConstants;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;

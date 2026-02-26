@@ -797,9 +797,6 @@ public class BrevoEmailService implements EmailService, InitializingBean {
     /**
      * Sends an email with a download link to the PDF instead of an attachment
      */
-    private void sendEmailWithDownloadLink(InvoiceDTO invoice, byte[] pdfBytes) {
-        sendEmailWithDownloadLink(invoice, pdfBytes, Collections.emptyList());
-    }
 
     private void sendEmailWithDownloadLink(InvoiceDTO invoice, byte[] pdfBytes, List<String> additionalEmails) {
         try {
@@ -867,5 +864,12 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                     invoice != null ? invoice.getInvoiceNumber() : "unknown", e);
             throw new RuntimeException("Failed to send email with download link", e);
         }
+    }
+
+    private String resolveSenderEmail(InvoiceDTO invoice) {
+        if (invoice != null && StringUtils.hasText(invoice.getFromEmail())) {
+            return invoice.getFromEmail().trim();
+        }
+        return senderEmail;
     }
 }
