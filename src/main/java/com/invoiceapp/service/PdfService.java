@@ -292,14 +292,15 @@ public class PdfService {
                         if (getValue(invoice.getEmployeeEmail()) != null
                                         && !getValue(invoice.getEmployeeEmail()).isEmpty()) {
                                 String label = "japan".equalsIgnoreCase(invoice.getCountry()) ? "メールアドレス : "
-                                                : "Email:   ";
+                                                : "Email:        ";
                                 toPara.add(new Text(label).setFont(regularFont).setFontSize(10))
                                                 .add(new Text(getValue(invoice.getEmployeeEmail()) + "\n")
                                                                 .setFont(regularFont).setFontSize(10));
                         }
                         if (getValue(invoice.getEmployeeMobile()) != null
                                         && !getValue(invoice.getEmployeeMobile()).isEmpty()) {
-                                String label = "japan".equalsIgnoreCase(invoice.getCountry()) ? "電話番号 : " : "Phone:   ";
+                                String label = "japan".equalsIgnoreCase(invoice.getCountry()) ? "電話番号       : "
+                                                : "Phone:        ";
                                 toPara.add(new Text(label).setFont(regularFont).setFontSize(10))
                                                 .add(new Text(getValue(invoice.getEmployeeMobile()) + "\n")
                                                                 .setFont(regularFont).setFontSize(10));
@@ -307,7 +308,8 @@ public class PdfService {
                         if (getValue(invoice.getEmployeeAddress()) != null
                                         && !getValue(invoice.getEmployeeAddress()).isEmpty()) {
                                 String addr = getValue(invoice.getEmployeeAddress()).replace("\n", ", ");
-                                String label = "japan".equalsIgnoreCase(invoice.getCountry()) ? "住所 : " : "Address: ";
+                                String label = "japan".equalsIgnoreCase(invoice.getCountry()) ? "住所           : "
+                                                : "Address:    ";
                                 toPara.add(new Text(label).setFont(regularFont).setFontSize(10))
                                                 .add(new Text(addr).setFont(regularFont).setFontSize(10));
                         }
