@@ -491,7 +491,7 @@ public class BrevoEmailService implements EmailService, InitializingBean {
         Map<String, Object> request = new HashMap<>();
 
         // Sender (Force lowercase for Brevo case-sensitivity)
-        String finalSenderEmail = senderEmail != null ? senderEmail.trim().toLowerCase() : "";
+        String finalSenderEmail = resolveSenderEmail(invoice);
         Map<String, String> sender = new HashMap<>();
         sender.put("email", finalSenderEmail);
         sender.put("name", senderName);
@@ -547,14 +547,9 @@ public class BrevoEmailService implements EmailService, InitializingBean {
             body.append("<p>please refer the attached invoice for the month ").append(monthName).append(".</p>");
             body.append("<p>Please find your invoice details below:</p>");
 
-            // Add invoice details
-            body.append("<table style='width: 100%; border-collapse: collapse; margin: 15px 0;'>");
-            body.append("<tr style='background-color: #f8f9fa;'>");
-            body.append("<th style='padding: 12px; border: 1px solid #ddd; text-align: left;'>Description</th>");
-            body.append("<th style='padding: 12px; border: 1px solid #ddd; text-align: right;'>Hours</th>");
-            body.append("<th style='padding: 12px; border: 1px solid #ddd; text-align: right;'>Rate</th>");
-            body.append("<th style='padding: 12px; border: 1px solid #ddd; text-align: right;'>Total</th>");
-            body.append("</tr>");
+            // Add subtotal, tax, and grand total
+            String currencySymbol = getCurrencySymbol(invoice.getCountry());
+            String amountFormat = "japan".equalsIgnoreCase(invoice.getCountry()) ? "%.0f" : "%.2f";
 
             // Add service items
             if (!CollectionUtils.isEmpty(invoice.getServices())) {
@@ -569,11 +564,13 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                         body.append("<td style='padding: 10px; border: 1px solid #ddd;'>")
                                 .append(escapeHtml(description)).append("</td>");
                         body.append("<td style='padding: 10px; border: 1px solid #ddd; text-align: right;'>")
-                                .append(String.format("%.2f", hours)).append("</td>");
+                                .append(String.format("%.1f", hours)).append("</td>");
                         body.append("<td style='padding: 10px; border: 1px solid #ddd; text-align: right;'>")
-                                .append(String.format("%.2f", rate)).append("</td>");
+                                .append(currencySymbol).append(" ").append(String.format(amountFormat, rate))
+                                .append("</td>");
                         body.append("<td style='padding: 10px; border: 1px solid #ddd; text-align: right;'>")
-                                .append(String.format("%.2f", total)).append("</td>");
+                                .append(currencySymbol).append(" ").append(String.format(amountFormat, total))
+                                .append("</td>");
                         body.append("</tr>");
                     }
                 }
@@ -582,12 +579,12 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                         "<tr><td colspan='4' style='padding: 10px; text-align: center;'>No services found</td></tr>");
             }
 
-            // Add subtotal, tax, and grand total
             body.append("<tr style='font-weight: bold; background-color: #f8f9fa;'>");
             body.append(
                     "<td colspan='3' style='padding: 12px; border: 1px solid #ddd; text-align: right;'>Subtotal:</td>");
             body.append("<td style='padding: 12px; border: 1px solid #ddd; text-align: right;'>")
-                    .append(String.format("%.2f", invoice.getSubTotal())).append("</td>");
+                    .append(currencySymbol).append(" ").append(String.format(amountFormat, invoice.getSubTotal()))
+                    .append("</td>");
             body.append("</tr>");
 
             if ("india".equalsIgnoreCase(invoice.getCountry())) {
@@ -600,21 +597,24 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                 body.append("<td colspan='3' style='padding: 12px; border: 1px solid #ddd; text-align: right;'>CGST (")
                         .append(String.format("%.2f", cgst)).append("%):</td>");
                 body.append("<td style='padding: 12px; border: 1px solid #ddd; text-align: right;'>")
-                        .append(String.format("%.2f", cgstAmt)).append("</td>");
+                        .append(currencySymbol).append(" ").append(String.format(amountFormat, cgstAmt))
+                        .append("</td>");
                 body.append("</tr>");
 
                 body.append("<tr style='font-weight: bold; background-color: #f8f9fa;'>");
                 body.append("<td colspan='3' style='padding: 12px; border: 1px solid #ddd; text-align: right;'>SGST (")
                         .append(String.format("%.2f", sgst)).append("%):</td>");
                 body.append("<td style='padding: 12px; border: 1px solid #ddd; text-align: right;'>")
-                        .append(String.format("%.2f", sgstAmt)).append("</td>");
+                        .append(currencySymbol).append(" ").append(String.format(amountFormat, sgstAmt))
+                        .append("</td>");
                 body.append("</tr>");
             } else if (invoice.getTaxRate() != null && invoice.getTaxRate() > 0) {
                 body.append("<tr style='font-weight: bold; background-color: #f8f9fa;'>");
                 body.append("<td colspan='3' style='padding: 12px; border: 1px solid #ddd; text-align: right;'>Tax (")
                         .append(String.format("%.2f", invoice.getTaxRate())).append("%):</td>");
                 body.append("<td style='padding: 12px; border: 1px solid #ddd; text-align: right;'>")
-                        .append(String.format("%.2f", invoice.getTaxAmount())).append("</td>");
+                        .append(currencySymbol).append(" ").append(String.format(amountFormat, invoice.getTaxAmount()))
+                        .append("</td>");
                 body.append("</tr>");
             }
 
@@ -622,7 +622,8 @@ public class BrevoEmailService implements EmailService, InitializingBean {
             body.append(
                     "<td colspan='3' style='padding: 12px; border: 1px solid #ddd; text-align: right;'>Grand Total:</td>");
             body.append("<td style='padding: 12px; border: 1px solid #ddd; text-align: right;'>")
-                    .append(String.format("%.2f", invoice.getGrandTotal())).append("</td>");
+                    .append(currencySymbol).append(" ").append(String.format(amountFormat, invoice.getGrandTotal()))
+                    .append("</td>");
             body.append("</tr>");
 
             // Add payment instructions and footer
@@ -630,10 +631,29 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                     "<div style='margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #3498db;'>");
             body.append("<h3 style='margin-top: 0; color: #2c3e50;'>Payment Instructions</h3>");
             body.append("<p>Please make the payment to the following account details:</p>");
-            body.append("<p>Bank: [Your Bank Name]<br>");
-            body.append("Account Name: [Your Account Name]<br>");
-            body.append("Account Number: [Your Account Number]<br>");
-            body.append("Reference: Invoice #").append(invoice.getInvoiceNumber()).append("</p>");
+
+            com.invoiceapp.dto.BankDetailsDTO bank = (invoice.getCompanyInfo() != null)
+                    ? invoice.getCompanyInfo().getBankDetails()
+                    : null;
+            if (bank != null) {
+                body.append("<p>");
+                if (StringUtils.hasText(bank.getBankName()))
+                    body.append("Bank: ").append(escapeHtml(bank.getBankName())).append("<br>");
+                if (StringUtils.hasText(bank.getAccountHolderName()))
+                    body.append("Account Name: ").append(escapeHtml(bank.getAccountHolderName())).append("<br>");
+                if (StringUtils.hasText(bank.getAccountNumber()))
+                    body.append("Account Number: ").append(escapeHtml(bank.getAccountNumber())).append("<br>");
+                if ("japan".equalsIgnoreCase(invoice.getCountry())) {
+                    if (StringUtils.hasText(bank.getSwiftCode()))
+                        body.append("Swift Code: ").append(escapeHtml(bank.getSwiftCode())).append("<br>");
+                } else {
+                    if (StringUtils.hasText(bank.getIfscCode()))
+                        body.append("IFSC Code: ").append(escapeHtml(bank.getIfscCode())).append("<br>");
+                }
+                body.append("Reference: Invoice #").append(invoice.getInvoiceNumber()).append("</p>");
+            } else {
+                body.append("<p>Please refer to the attached PDF for bank details.</p>");
+            }
             body.append("</div>");
 
             // Add footer
@@ -653,6 +673,12 @@ public class BrevoEmailService implements EmailService, InitializingBean {
             logger.error("Error building email body: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to generate email content", e);
         }
+    }
+
+    private String getCurrencySymbol(String country) {
+        if ("japan".equalsIgnoreCase(country))
+            return "¥";
+        return "₹";
     }
 
     private boolean isValidEmail(String email) {
@@ -809,7 +835,7 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                     senderName);
 
             // Build the email request
-            String finalSenderEmail = senderEmail != null ? senderEmail.trim().toLowerCase() : "";
+            String finalSenderEmail = resolveSenderEmail(invoice);
             Map<String, Object> emailRequest = new HashMap<>();
             emailRequest.put("sender", Map.of("name", senderName, "email", finalSenderEmail));
 

@@ -51,6 +51,7 @@ public class InvoiceService {
         invoice.setShowConsumptionTax(invoiceDTO.getShowConsumptionTax());
         invoice.setRoundOff(invoiceDTO.getRoundOff());
         invoice.setFinalAmount(invoiceDTO.getFinalAmount());
+        invoice.setSignatureUrl(invoiceDTO.getSignatureUrl()); // Added signatureUrl mapping
         invoice.setUpdatedAt(LocalDateTime.now());
 
         Invoice updatedInvoice = invoiceRepository.save(invoice);
@@ -128,6 +129,7 @@ public class InvoiceService {
         invoice.setCountry(dto.getCountry());
         invoice.setUserId(dto.getUserId());
         invoice.setClientType(dto.getClientType()); // Added clientType mapping
+        invoice.setSignatureUrl(dto.getSignatureUrl()); // Added signatureUrl mapping
         invoice.setUserId(dto.getUserId());
 
         // Map CompanyInfo DTO to Entity
@@ -137,6 +139,8 @@ public class InvoiceService {
             companyInfo.setCompanyName(dto.getCompanyInfo().getCompanyName());
             companyInfo.setCompanyAddress(dto.getCompanyInfo().getCompanyAddress());
             companyInfo.setCompanyLogoUrl(dto.getCompanyInfo().getCompanyLogoUrl());
+            companyInfo.setInvoiceFormat(dto.getCompanyInfo().getInvoiceFormat());
+            companyInfo.setFromEmail(dto.getCompanyInfo().getFromEmail());
 
             if (dto.getCompanyInfo().getBankDetails() != null) {
                 com.invoiceapp.entity.BankDetails bankDetails = new com.invoiceapp.entity.BankDetails();
@@ -170,6 +174,8 @@ public class InvoiceService {
             companyInfoDTO.setCompanyName(entity.getCompanyInfo().getCompanyName());
             companyInfoDTO.setCompanyAddress(entity.getCompanyInfo().getCompanyAddress());
             companyInfoDTO.setCompanyLogoUrl(entity.getCompanyInfo().getCompanyLogoUrl());
+            companyInfoDTO.setInvoiceFormat(entity.getCompanyInfo().getInvoiceFormat());
+            companyInfoDTO.setFromEmail(entity.getCompanyInfo().getFromEmail());
 
             if (entity.getCompanyInfo().getBankDetails() != null) {
                 com.invoiceapp.dto.BankDetailsDTO bankDetailsDTO = new com.invoiceapp.dto.BankDetailsDTO();
@@ -203,6 +209,7 @@ public class InvoiceService {
         dto.setFinalAmount(entity.getFinalAmount());
         dto.setCountry(entity.getCountry());
         dto.setClientType(entity.getClientType()); // Added clientType mapping
+        dto.setSignatureUrl(entity.getSignatureUrl()); // Added signatureUrl mapping
         dto.setCreatedAt(entity.getCreatedAt() != null ? entity.getCreatedAt().toString() : null);
         dto.setUpdatedAt(entity.getUpdatedAt() != null ? entity.getUpdatedAt().toString() : null);
         return dto;

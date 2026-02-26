@@ -40,6 +40,7 @@ public class InvoiceDTO {
     private Boolean showConsumptionTax;
     private Double roundOff;
     private Double finalAmount;
+    private String signatureUrl; // Added for custom signature
 
     public Double getRoundOff() {
         return roundOff;
@@ -281,5 +282,13 @@ public class InvoiceDTO {
 
     public void setShowConsumptionTax(Boolean showConsumptionTax) {
         this.showConsumptionTax = showConsumptionTax;
+    }
+
+    public String getSignatureUrl() {
+        return signatureUrl;
+    }
+
+    public void setSignatureUrl(String signatureUrl) {
+        this.signatureUrl = signatureUrl;
     }
 }

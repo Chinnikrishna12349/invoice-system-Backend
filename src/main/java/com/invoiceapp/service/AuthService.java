@@ -170,6 +170,8 @@ public class AuthService {
             companyInfo.setCompanyAddress(updateRequest.getCompanyAddress().trim());
         if (updateRequest.getInvoiceFormat() != null)
             companyInfo.setInvoiceFormat(updateRequest.getInvoiceFormat());
+        if (updateRequest.getFromEmail() != null)
+            companyInfo.setFromEmail(updateRequest.getFromEmail());
 
         if (updateRequest.getCompanyLogo() != null && !updateRequest.getCompanyLogo().isEmpty()) {
             companyInfo.setCompanyLogoUrl(convertToBase64(updateRequest.getCompanyLogo()));
@@ -198,6 +200,8 @@ public class AuthService {
         dto.setCompanyName(savedCompany.getCompanyName());
         dto.setCompanyAddress(savedCompany.getCompanyAddress());
         dto.setCompanyLogoUrl(savedCompany.getCompanyLogoUrl());
+        dto.setInvoiceFormat(savedCompany.getInvoiceFormat());
+        dto.setFromEmail(savedCompany.getFromEmail());
 
         if (savedCompany.getBankDetails() != null) {
             BankDetailsDTO bankDto = new BankDetailsDTO();

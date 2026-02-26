@@ -16,6 +16,7 @@ public class CompanyInfo {
 
     private String companyLogoUrl; // URL/path to stored logo
     private String invoiceFormat; // Custom invoice number format (e.g., OF-IT-)
+    private String fromEmail; // Persistence for From Email
 
     private BankDetails bankDetails;
 
@@ -106,5 +107,13 @@ public class CompanyInfo {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getFromEmail() {
+        return fromEmail;
+    }
+
+    public void setFromEmail(String fromEmail) {
+        this.fromEmail = fromEmail;
     }
 }

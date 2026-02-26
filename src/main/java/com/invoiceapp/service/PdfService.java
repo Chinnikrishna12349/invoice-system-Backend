@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Locale;
 
@@ -138,44 +139,55 @@ public class PdfService {
                         // ✅ TOP LOGO (Robust Loading)
                         boolean isVisionAI = "Vision AI LLC".equalsIgnoreCase(cName);
 
-                        // ✅ TOP LOGO (Robust Loading) - ONLY for Vision AI
-                        if (isVisionAI && company != null) {
+                        // ✅ TOP LOGO (Robust Loading)
+                        if (company != null) {
                                 try {
                                         ImageData logoData = null;
 
-                                        // Try to load custom logo if URL is provided
-                                        if (company.getCompanyLogoUrl() != null) {
+                                        // Try to load custom logo if Base64 or URL is provided
+                                        if (company.getCompanyLogoUrl() != null
+                                                        && !company.getCompanyLogoUrl().isEmpty()) {
                                                 String logoPath = company.getCompanyLogoUrl();
 
-                                                // Strategy 1: Check local uploads directory (stripped of URL)
-                                                String filename = logoPath;
-                                                if (filename.contains("/uploads/")) {
-                                                        filename = filename
-                                                                        .substring(filename.indexOf("/uploads/") + 9);
-                                                } else if (filename.contains("/")) {
-                                                        filename = filename.substring(filename.lastIndexOf("/") + 1);
-                                                }
+                                                if (logoPath.startsWith("data:image")) {
+                                                        String base64 = logoPath.substring(logoPath.indexOf(",") + 1);
+                                                        logoData = ImageDataFactory
+                                                                        .create(Base64.getDecoder().decode(base64));
+                                                } else {
+                                                        // Strategy 1: Check local uploads directory (stripped of URL)
+                                                        String filename = logoPath;
+                                                        if (filename.contains("/uploads/")) {
+                                                                filename = filename
+                                                                                .substring(filename.indexOf("/uploads/")
+                                                                                                + 9);
+                                                        } else if (filename.contains("/")) {
+                                                                filename = filename.substring(
+                                                                                filename.lastIndexOf("/") + 1);
+                                                        }
 
-                                                File localFile = new File("uploads/" + filename);
-                                                if (localFile.exists()) {
-                                                        logoData = ImageDataFactory.create(localFile.getAbsolutePath());
-                                                }
-                                                // Strategy 2: Try absolute path if provided
-                                                else if (new File(logoPath).exists()) {
-                                                        logoData = ImageDataFactory.create(logoPath);
-                                                }
-                                                // Strategy 3: Try URL
-                                                else {
-                                                        try {
+                                                        File localFile = new File("uploads/" + filename);
+                                                        if (localFile.exists()) {
+                                                                logoData = ImageDataFactory
+                                                                                .create(localFile.getAbsolutePath());
+                                                        }
+                                                        // Strategy 2: Try absolute path if provided
+                                                        else if (new File(logoPath).exists()) {
                                                                 logoData = ImageDataFactory.create(logoPath);
-                                                        } catch (Exception ignored) {
-                                                                // URL fetch failed
+                                                        }
+                                                        // Strategy 3: Try URL
+                                                        else {
+                                                                try {
+                                                                        logoData = ImageDataFactory.create(logoPath);
+                                                                } catch (Exception ignored) {
+                                                                        // URL fetch failed
+                                                                }
                                                         }
                                                 }
                                         }
 
-                                        // Fallback to default Vision AI logo if no custom logo loaded
-                                        if (logoData == null) {
+                                        // Fallback to default Vision AI logo if no custom logo loaded AND it is Vision
+                                        // AI
+                                        if (logoData == null && isVisionAI) {
                                                 try {
                                                         java.net.URL resource = getClass()
                                                                         .getResource("/vision-ai-logo.png");
@@ -278,25 +290,29 @@ public class PdfService {
                         // For a simple fix, we'll ensure labels are tracked.
                         if (getValue(invoice.getEmployeeEmail()) != null
                                         && !getValue(invoice.getEmployeeEmail()).isEmpty()) {
-                                toPara.add(new Text("Email:   ").setFont(regularFont).setFontSize(10))
+                                String label = "japan".equalsIgnoreCase(invoice.getCountry()) ? "メールアドレス : "
+                                                : "Email:   ";
+                                toPara.add(new Text(label).setFont(regularFont).setFontSize(10))
                                                 .add(new Text(getValue(invoice.getEmployeeEmail()) + "\n")
                                                                 .setFont(regularFont).setFontSize(10));
                         }
                         if (getValue(invoice.getEmployeeMobile()) != null
                                         && !getValue(invoice.getEmployeeMobile()).isEmpty()) {
-                                toPara.add(new Text("Phone:   ").setFont(regularFont).setFontSize(10))
+                                String label = "japan".equalsIgnoreCase(invoice.getCountry()) ? "電話番号 : " : "Phone:   ";
+                                toPara.add(new Text(label).setFont(regularFont).setFontSize(10))
                                                 .add(new Text(getValue(invoice.getEmployeeMobile()) + "\n")
                                                                 .setFont(regularFont).setFontSize(10));
                         }
                         if (getValue(invoice.getEmployeeAddress()) != null
                                         && !getValue(invoice.getEmployeeAddress()).isEmpty()) {
                                 String addr = getValue(invoice.getEmployeeAddress()).replace("\n", ", ");
-                                toPara.add(new Text("Address: ").setFont(regularFont).setFontSize(10))
+                                String label = "japan".equalsIgnoreCase(invoice.getCountry()) ? "住所 : " : "Address: ";
+                                toPara.add(new Text(label).setFont(regularFont).setFontSize(10))
                                                 .add(new Text(addr).setFont(regularFont).setFontSize(10));
                         }
 
                         document.add(toPara.setFixedPosition(convertMmToPoints(14), startY - convertMmToPoints(25),
-                                        convertMmToPoints(80)));
+                                        convertMmToPoints(90)));
                         // ... Code omitted until Bank Details ...
 
                         // Logic for Bank Details at lines ~385
@@ -306,12 +322,14 @@ public class PdfService {
                         yPos += convertMmToPoints(45);
 
                         // ==================== Services Table ====================
-                        Table table = new Table(UnitValue.createPercentArray(new float[] { 40, 15, 20, 25 }))
+                        // Adjusted to 5 columns with SNO and better widths for large amounts (T3)
+                        // Sync with frontend: { 8, 33, 10, 24.5, 24.5 } approx
+                        Table table = new Table(UnitValue.createPercentArray(new float[] { 8, 33, 12, 23.5f, 23.5f }))
                                         .setWidth(UnitValue.createPercentValue(100))
                                         .setMarginTop(convertMmToPoints(10));
 
                         // Header
-                        String[] headers = { "Description", "Hours", "Rate", "Amount" };
+                        String[] headers = { "SNO", "Description", "Hours", "Rate", "Amount" };
                         for (String header : headers) {
                                 table.addCell(new Cell()
                                                 .add(new Paragraph(header).setFont(boldFont)
@@ -325,16 +343,25 @@ public class PdfService {
                         double subtotal = 0;
                         // Rows
                         if (invoice.getServices() != null) {
+                                int sno = 1;
                                 for (com.invoiceapp.entity.ServiceItem item : invoice.getServices()) {
+                                        table.addCell(new Cell()
+                                                        .add(new Paragraph(String.valueOf(sno++)).setFont(regularFont))
+                                                        .setTextAlignment(TextAlignment.CENTER)
+                                                        .setPadding(6)
+                                                        .setFontSize(10));
+
                                         table.addCell(new Cell()
                                                         .add(new Paragraph(item.getDescription()).setFont(regularFont))
                                                         .setTextAlignment(TextAlignment.LEFT)
                                                         .setPadding(6)
                                                         .setFontSize(10));
 
+                                        // Format hours using DecimalFormat to allow up to 2 decimal places (T4)
+                                        DecimalFormat hoursFormat = new DecimalFormat("0.##");
                                         table.addCell(new Cell()
-                                                        .add(new Paragraph(String.format(Locale.US, "%.2f",
-                                                                        item.getHours())).setFont(regularFont))
+                                                        .add(new Paragraph(hoursFormat.format(item.getHours()))
+                                                                        .setFont(regularFont))
                                                         .setTextAlignment(TextAlignment.CENTER)
                                                         .setPadding(6)
                                                         .setFontSize(10));
@@ -347,7 +374,8 @@ public class PdfService {
                                                         .setPadding(6)
                                                         .setFontSize(10));
 
-                                        double amount = item.getTotal();
+                                        // Round amount to 2 decimal places for consistent calculation (T5)
+                                        double amount = Math.round((item.getHours() * item.getRate()) * 100.0) / 100.0;
                                         subtotal += amount;
                                         table.addCell(new Cell()
                                                         .add(new Paragraph(
@@ -370,7 +398,7 @@ public class PdfService {
                         boolean showTax = !"japan".equalsIgnoreCase(invoice.getCountry())
                                         || (invoice.getShowConsumptionTax() != null && invoice.getShowConsumptionTax());
                         double taxRate = showTax ? (invoice.getTaxRate() != null ? invoice.getTaxRate() : 0.0) : 0.0;
-                        double tax = subtotal * (taxRate / 100.0);
+                        double tax = Math.round((subtotal * (taxRate / 100.0)) * 100.0) / 100.0;
                         double grandTotal = subtotal + tax;
 
                         totalTable.addCell(createTotalCell("SubTotal", regularFont, 11));
@@ -499,7 +527,7 @@ public class PdfService {
                         signatureCell.setVerticalAlignment(VerticalAlignment.BOTTOM);
                         signatureCell.setPaddingBottom(5); // Align with the bottom row of bank details
 
-                        // Add Vision AI Stamp above signature if applicable
+                        // Add Vision AI Stamp OR Custom Signature above signature line
                         if (isVisionAI) {
                                 try (InputStream stampStream = getClass().getClassLoader()
                                                 .getResourceAsStream("visionai-stamp.png")) {
@@ -507,15 +535,53 @@ public class PdfService {
                                                 ImageData stampData = ImageDataFactory
                                                                 .create(stampStream.readAllBytes());
                                                 Image stamp = new Image(stampData);
-                                                float stampSize = convertMmToPoints(18);
+                                                float stampSize = convertMmToPoints(25); // Increased size
                                                 stamp.setWidth(stampSize);
-                                                // Place above the signature line
                                                 signatureCell.add(
                                                                 stamp.setHorizontalAlignment(HorizontalAlignment.CENTER)
-                                                                                .setMarginBottom(14));
+                                                                                .setMarginBottom(10));
                                         }
                                 } catch (Exception e) {
                                         System.err.println("Could not load stamp for signature: " + e.getMessage());
+                                }
+                        } else if (invoice.getSignatureUrl() != null && !invoice.getSignatureUrl().isEmpty()) {
+                                // For non-VisionAI, load custom signature if signatureUrl is present
+                                try {
+                                        String sigData = invoice.getSignatureUrl();
+                                        if (sigData.startsWith("data:image")) {
+                                                sigData = sigData.substring(sigData.indexOf(",") + 1);
+                                        }
+                                        byte[] decoded = Base64.getDecoder().decode(sigData);
+                                        ImageData sigImageData = ImageDataFactory.create(decoded);
+                                        Image signature = new Image(sigImageData);
+                                        // Increased width for better visibility
+                                        signature.setWidth(convertMmToPoints(40));
+                                        signatureCell.add(signature.setHorizontalAlignment(HorizontalAlignment.CENTER)
+                                                        .setMarginBottom(5));
+                                } catch (Exception e) {
+                                        System.err.println("Could not load custom signature: " + e.getMessage());
+                                }
+                        } else if (invoice.getCompanyInfo() != null
+                                        && invoice.getCompanyInfo().getCompanyLogoUrl() != null
+                                        && !invoice.getCompanyInfo().getCompanyLogoUrl().isEmpty()) {
+                                // Fallback to company logo if no specific signature is provided
+                                try {
+                                        String logoUrl = invoice.getCompanyInfo().getCompanyLogoUrl();
+                                        ImageData logoData = null;
+                                        if (logoUrl.startsWith("data:image")) {
+                                                String base64 = logoUrl.substring(logoUrl.indexOf(",") + 1);
+                                                logoData = ImageDataFactory.create(Base64.getDecoder().decode(base64));
+                                        } else {
+                                                logoData = ImageDataFactory.create(logoUrl);
+                                        }
+                                        if (logoData != null) {
+                                                Image logoAsSig = new Image(logoData);
+                                                logoAsSig.setWidth(convertMmToPoints(30));
+                                                signatureCell.add(logoAsSig
+                                                                .setHorizontalAlignment(HorizontalAlignment.CENTER)
+                                                                .setMarginBottom(5));
+                                        }
+                                } catch (Exception ignored) {
                                 }
                         }
 
@@ -560,13 +626,8 @@ public class PdfService {
         private String formatCurrency(double amount, String country, boolean includeSymbol) {
                 String formatted;
                 if ("japan".equalsIgnoreCase(country)) {
-                        // Use 2 decimals if there's a fractional part, else whole number
-                        if (amount % 1 != 0) {
-                                formatted = String.format(Locale.US, "%,.2f", amount);
-                        } else {
-                                formatted = String.format(Locale.US, "%,.0f", amount);
-                        }
-                        return includeSymbol ? "JPY " + formatted : formatted;
+                        formatted = String.format(Locale.US, "%,.2f", amount);
+                        return includeSymbol ? "¥ " + formatted : formatted;
                 } else {
                         // Default to India/Rupee
                         formatted = String.format(Locale.US, "%,.2f", amount);
@@ -581,7 +642,7 @@ public class PdfService {
         private String formatDate(String dateStr) {
                 try {
                         SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
-                        SimpleDateFormat out = new SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH);
+                        SimpleDateFormat out = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
                         Date d = in.parse(dateStr);
                         return out.format(d);
                 } catch (Exception e) {

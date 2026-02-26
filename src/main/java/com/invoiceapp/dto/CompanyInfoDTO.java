@@ -5,6 +5,8 @@ public class CompanyInfoDTO {
     private String companyName;
     private String companyAddress;
     private String companyLogoUrl;
+    private String invoiceFormat;
+    private String fromEmail;
     private BankDetailsDTO bankDetails;
 
     public CompanyInfoDTO() {
@@ -48,5 +50,21 @@ public class CompanyInfoDTO {
 
     public void setBankDetails(BankDetailsDTO bankDetails) {
         this.bankDetails = bankDetails;
+    }
+
+    public String getInvoiceFormat() {
+        return invoiceFormat;
+    }
+
+    public void setInvoiceFormat(String invoiceFormat) {
+        this.invoiceFormat = invoiceFormat;
+    }
+
+    public String getFromEmail() {
+        return fromEmail;
+    }
+
+    public void setFromEmail(String fromEmail) {
+        this.fromEmail = fromEmail;
     }
 }
