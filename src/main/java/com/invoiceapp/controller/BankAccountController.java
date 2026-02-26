@@ -9,7 +9,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/bank-accounts")
-@CrossOrigin(origins = "*")
 public class BankAccountController {
 
     @Autowired
