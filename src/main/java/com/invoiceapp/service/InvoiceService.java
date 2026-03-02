@@ -54,6 +54,40 @@ public class InvoiceService {
         invoice.setSignatureUrl(invoiceDTO.getSignatureUrl()); // Added signatureUrl mapping
         invoice.setUpdatedAt(LocalDateTime.now());
 
+        invoice.setCountry(invoiceDTO.getCountry());
+        invoice.setClientType(invoiceDTO.getClientType());
+
+        // Map CompanyInfo DTO to Entity
+        if (invoiceDTO.getCompanyInfo() != null) {
+            com.invoiceapp.entity.CompanyInfo companyInfo = invoice.getCompanyInfo();
+            if (companyInfo == null) {
+                companyInfo = new com.invoiceapp.entity.CompanyInfo();
+            }
+            companyInfo.setId(invoiceDTO.getCompanyInfo().getId());
+            companyInfo.setCompanyName(invoiceDTO.getCompanyInfo().getCompanyName());
+            companyInfo.setCompanyAddress(invoiceDTO.getCompanyInfo().getCompanyAddress());
+            companyInfo.setCompanyLogoUrl(invoiceDTO.getCompanyInfo().getCompanyLogoUrl());
+            companyInfo.setInvoiceFormat(invoiceDTO.getCompanyInfo().getInvoiceFormat());
+            companyInfo.setFromEmail(invoiceDTO.getCompanyInfo().getFromEmail());
+
+            if (invoiceDTO.getCompanyInfo().getBankDetails() != null) {
+                com.invoiceapp.entity.BankDetails bankDetails = companyInfo.getBankDetails();
+                if (bankDetails == null) {
+                    bankDetails = new com.invoiceapp.entity.BankDetails();
+                }
+                bankDetails.setBankName(invoiceDTO.getCompanyInfo().getBankDetails().getBankName());
+                bankDetails.setAccountNumber(invoiceDTO.getCompanyInfo().getBankDetails().getAccountNumber());
+                bankDetails.setAccountHolderName(invoiceDTO.getCompanyInfo().getBankDetails().getAccountHolderName());
+                bankDetails.setIfscCode(invoiceDTO.getCompanyInfo().getBankDetails().getIfscCode());
+                bankDetails.setBranchName(invoiceDTO.getCompanyInfo().getBankDetails().getBranchName());
+                bankDetails.setBranchCode(invoiceDTO.getCompanyInfo().getBankDetails().getBranchCode());
+                bankDetails.setAccountType(invoiceDTO.getCompanyInfo().getBankDetails().getAccountType());
+                bankDetails.setSwiftCode(invoiceDTO.getCompanyInfo().getBankDetails().getSwiftCode());
+                companyInfo.setBankDetails(bankDetails);
+            }
+            invoice.setCompanyInfo(companyInfo);
+        }
+
         Invoice updatedInvoice = invoiceRepository.save(invoice);
         return convertToDTO(updatedInvoice);
     }

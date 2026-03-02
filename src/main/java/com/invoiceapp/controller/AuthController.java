@@ -226,6 +226,8 @@ public class AuthController {
             companyInfoDTO.setCompanyName(companyInfo.getCompanyName());
             companyInfoDTO.setCompanyAddress(companyInfo.getCompanyAddress());
             companyInfoDTO.setCompanyLogoUrl(companyInfo.getCompanyLogoUrl());
+            companyInfoDTO.setFromEmail(companyInfo.getFromEmail());
+            companyInfoDTO.setInvoiceFormat(companyInfo.getInvoiceFormat());
 
             // Convert BankDetails
             if (companyInfo.getBankDetails() != null) {
@@ -262,7 +264,8 @@ public class AuthController {
             @RequestParam(value = "branchName", required = false) String branchName,
             @RequestParam(value = "branchCode", required = false) String branchCode,
             @RequestParam(value = "accountType", required = false) String accountType,
-            @RequestParam(value = "invoiceFormat", required = false) String invoiceFormat) {
+            @RequestParam(value = "invoiceFormat", required = false) String invoiceFormat,
+            @RequestParam(value = "fromEmail", required = false) String fromEmail) {
         try {
             System.out.println("========================================");
             System.out.println("API: PUT /api/auth/update-company request received");
@@ -288,6 +291,7 @@ public class AuthController {
             updateRequest.setCompanyAddress(companyAddress);
             updateRequest.setCompanyLogo(companyLogo);
             updateRequest.setInvoiceFormat(invoiceFormat);
+            updateRequest.setFromEmail(fromEmail);
 
             if (bankName != null) {
                 BankDetailsDTO bankDetails = new BankDetailsDTO();

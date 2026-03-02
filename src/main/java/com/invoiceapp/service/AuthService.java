@@ -119,6 +119,7 @@ public class AuthService {
         companyInfo.setCompanyAddress(signupRequest.getCompanyAddress().trim());
         companyInfo.setCompanyLogoUrl(logoUrl);
         companyInfo.setInvoiceFormat(signupRequest.getInvoiceFormat());
+        companyInfo.setFromEmail(signupRequest.getFromEmail());
         companyInfo.setBankDetails(bankDetails);
         companyInfo.setCreatedAt(java.time.LocalDateTime.now());
         companyInfo.setUpdatedAt(java.time.LocalDateTime.now());
@@ -151,6 +152,8 @@ public class AuthService {
         companyInfoDTO.setCompanyName(savedCompanyInfo.getCompanyName());
         companyInfoDTO.setCompanyAddress(savedCompanyInfo.getCompanyAddress());
         companyInfoDTO.setCompanyLogoUrl(savedCompanyInfo.getCompanyLogoUrl());
+        companyInfoDTO.setFromEmail(savedCompanyInfo.getFromEmail());
+        companyInfoDTO.setInvoiceFormat(savedCompanyInfo.getInvoiceFormat());
         companyInfoDTO.setBankDetails(bankDetailsDTO);
 
         return new SignupResponse(token, savedUser.getId(), savedUser.getEmail(), companyInfoDTO);
