@@ -440,7 +440,6 @@ public class PdfService {
                         if (bank != null) {
                                 String bName = getValue(bank.getBankName());
                                 String bAcc = getValue(bank.getAccountNumber());
-                                String bIfsc = getValue(bank.getIfscCode());
                                 String bHolder = getValue(bank.getAccountHolderName());
                                 String bBranch = getValue(bank.getBranchName());
                                 String bBranchCode = getValue(bank.getBranchCode());
