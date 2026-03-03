@@ -677,8 +677,8 @@ public class BrevoEmailService implements EmailService, InitializingBean {
 
     private String getCurrencySymbol(String country) {
         if ("japan".equalsIgnoreCase(country))
-            return "¥";
-        return "₹";
+            return "&yen;"; // HTML entity for ¥
+        return "&#8377;"; // HTML entity for ₹
     }
 
     private boolean isValidEmail(String email) {
