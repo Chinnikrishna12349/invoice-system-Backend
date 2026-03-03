@@ -551,6 +551,16 @@ public class BrevoEmailService implements EmailService, InitializingBean {
             String currencySymbol = getCurrencySymbol(invoice.getCountry());
             String amountFormat = "japan".equalsIgnoreCase(invoice.getCountry()) ? "%.0f" : "%.2f";
 
+            // Start Table
+            body.append(
+                    "<table style='width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 20px;'>");
+            body.append("<thead><tr style='background-color: #f8f9fa;'>");
+            body.append("<th style='padding: 10px; border: 1px solid #ddd; text-align: left;'>Description</th>");
+            body.append("<th style='padding: 10px; border: 1px solid #ddd; text-align: right;'>Hours</th>");
+            body.append("<th style='padding: 10px; border: 1px solid #ddd; text-align: right;'>Rate</th>");
+            body.append("<th style='padding: 10px; border: 1px solid #ddd; text-align: right;'>Amount</th>");
+            body.append("</tr></thead><tbody>");
+
             // Add service items
             if (!CollectionUtils.isEmpty(invoice.getServices())) {
                 for (ServiceItem item : invoice.getServices()) {
@@ -576,7 +586,7 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                 }
             } else {
                 body.append(
-                        "<tr><td colspan='4' style='padding: 10px; text-align: center;'>No services found</td></tr>");
+                        "<tr><td colspan='4' style='padding: 10px; border: 1px solid #ddd; text-align: center;'>No services found</td></tr>");
             }
 
             body.append("<tr style='font-weight: bold; background-color: #f8f9fa;'>");
@@ -625,6 +635,9 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                     .append(currencySymbol).append(" ").append(String.format(amountFormat, invoice.getGrandTotal()))
                     .append("</td>");
             body.append("</tr>");
+
+            // End Table
+            body.append("</tbody></table>");
 
             // Add payment instructions and footer
             body.append(
