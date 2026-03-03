@@ -573,13 +573,19 @@ public class BrevoEmailService implements EmailService, InitializingBean {
 
                         body.append("<td style='padding: 10px; border: 1px solid #ddd;'>")
                                 .append(escapeHtml(description)).append("</td>");
+
+                        String hoursStr = (hours == Math.floor(hours))
+                                ? String.format("%.0f", hours)
+                                : String.valueOf(hours);
+
                         body.append("<td style='padding: 10px; border: 1px solid #ddd; text-align: right;'>")
-                                .append(String.format("%.1f", hours)).append("</td>");
+                                .append(hoursStr).append("</td>");
                         body.append("<td style='padding: 10px; border: 1px solid #ddd; text-align: right;'>")
                                 .append(currencySymbol).append(" ").append(String.format(amountFormat, rate))
                                 .append("</td>");
                         body.append("<td style='padding: 10px; border: 1px solid #ddd; text-align: right;'>")
-                                .append(currencySymbol).append(" ").append(String.format(amountFormat, total))
+                                .append(currencySymbol).append(" ")
+                                .append(String.format(amountFormat, Math.round(total * 100.0) / 100.0))
                                 .append("</td>");
                         body.append("</tr>");
                     }
@@ -624,6 +630,16 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                         .append(String.format("%.2f", invoice.getTaxRate())).append("%):</td>");
                 body.append("<td style='padding: 12px; border: 1px solid #ddd; text-align: right;'>")
                         .append(currencySymbol).append(" ").append(String.format(amountFormat, invoice.getTaxAmount()))
+                        .append("</td>");
+                body.append("</tr>");
+            }
+
+            if (invoice.getRoundOff() != null && invoice.getRoundOff() != 0) {
+                body.append("<tr style='font-weight: bold; background-color: #f8f9fa;'>");
+                body.append(
+                        "<td colspan='3' style='padding: 12px; border: 1px solid #ddd; text-align: right;'>Round Off:</td>");
+                body.append("<td style='padding: 12px; border: 1px solid #ddd; text-align: right;'>")
+                        .append(currencySymbol).append(" ").append(String.format(amountFormat, invoice.getRoundOff()))
                         .append("</td>");
                 body.append("</tr>");
             }

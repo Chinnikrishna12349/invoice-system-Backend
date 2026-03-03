@@ -217,24 +217,39 @@ public class InvoiceDTO {
     }
 
     public Double getSubTotal() {
-        return services.stream().mapToDouble(ServiceItem::getTotal).sum();
+        if (services == null)
+            return 0.0;
+        // Replicating frontend's individual row rounding: Math.round(hours * rate *
+        // 100)/100.0
+        return services.stream().mapToDouble(s -> {
+            double hrs = s.getHours() != null ? s.getHours() : 0.0;
+            double rt = s.getRate() != null ? s.getRate() : 0.0;
+            return Math.round((hrs * rt) * 100.0) / 100.0;
+        }).sum();
     }
 
     public Double getTaxAmount() {
         if ("india".equalsIgnoreCase(country)) {
             double cgst = (cgstRate != null ? cgstRate : 0.0);
             double sgst = (sgstRate != null ? sgstRate : 0.0);
-            return getSubTotal() * ((cgst + sgst) / 100.0);
+            return Math.round(getSubTotal() * (cgst / 100.0) * 100.0) / 100.0 +
+                    Math.round(getSubTotal() * (sgst / 100.0) * 100.0) / 100.0;
         }
         // For Japan, only calculate tax if showConsumptionTax is true
         if ("japan".equalsIgnoreCase(country) && (showConsumptionTax == null || !showConsumptionTax)) {
             return 0.0;
         }
-        return getSubTotal() * (taxRate / 100.0);
+        double tr = (taxRate != null ? taxRate : 0.0);
+        return Math.round(getSubTotal() * (tr / 100.0) * 100.0) / 100.0;
     }
 
     public Double getGrandTotal() {
-        return getSubTotal() + getTaxAmount();
+        if (finalAmount != null) {
+            return finalAmount; // Trust the frontend's final math directly
+        }
+        double subAndTax = getSubTotal() + getTaxAmount();
+        double rOff = (roundOff != null ? roundOff : 0.0);
+        return subAndTax + rOff;
     }
 
     public byte[] getPdfContent() {
