@@ -15,6 +15,7 @@ public class Invoice {
     private String date;
     private String dueDate; // Added due date
     private String poNumber; // Added PO Number
+    private String company; // Added company field for sender identification
 
     @Field("gmail")
     private String fromEmail; // Added From Email field
@@ -258,6 +259,14 @@ public class Invoice {
 
     public void setSignatureUrl(String signatureUrl) {
         this.signatureUrl = signatureUrl;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
     }
 
 }

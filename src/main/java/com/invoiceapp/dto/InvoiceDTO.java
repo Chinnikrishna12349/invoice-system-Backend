@@ -15,6 +15,7 @@ public class InvoiceDTO {
     private String date;
     private String dueDate; // Added due date
     private String poNumber; // Added PO Number
+    private String company; // Added company field for sender identification
     private String fromEmail; // Added From Email field
     private String clientType; // Added clientType
     @NotBlank(message = "Employee name is required")
@@ -265,6 +266,14 @@ public class InvoiceDTO {
             return companyInfo.getCompanyName();
         }
         return "Your Company Name";
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
     }
 
     public String getCountry() {

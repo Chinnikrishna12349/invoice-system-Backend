@@ -52,6 +52,7 @@ public class InvoiceService {
         invoice.setRoundOff(invoiceDTO.getRoundOff());
         invoice.setFinalAmount(invoiceDTO.getFinalAmount());
         invoice.setSignatureUrl(invoiceDTO.getSignatureUrl()); // Added signatureUrl mapping
+        invoice.setCompany(invoiceDTO.getCompany()); // Added company mapping
         invoice.setUpdatedAt(LocalDateTime.now());
 
         invoice.setCountry(invoiceDTO.getCountry());
@@ -164,6 +165,7 @@ public class InvoiceService {
         invoice.setUserId(dto.getUserId());
         invoice.setClientType(dto.getClientType()); // Added clientType mapping
         invoice.setSignatureUrl(dto.getSignatureUrl()); // Added signatureUrl mapping
+        invoice.setCompany(dto.getCompany()); // Added company mapping
         invoice.setUserId(dto.getUserId());
 
         // Map CompanyInfo DTO to Entity
@@ -244,6 +246,7 @@ public class InvoiceService {
         dto.setCountry(entity.getCountry());
         dto.setClientType(entity.getClientType()); // Added clientType mapping
         dto.setSignatureUrl(entity.getSignatureUrl()); // Added signatureUrl mapping
+        dto.setCompany(entity.getCompany()); // Added company mapping
         dto.setCreatedAt(entity.getCreatedAt() != null ? entity.getCreatedAt().toString() : null);
         dto.setUpdatedAt(entity.getUpdatedAt() != null ? entity.getUpdatedAt().toString() : null);
         return dto;
