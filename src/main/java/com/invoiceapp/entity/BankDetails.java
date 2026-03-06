@@ -6,6 +6,7 @@ public class BankDetails {
     private String accountHolderName;
     private String ifscCode;
     private String swiftCode; // Added Swift Code
+    private String bankCode;
     private String branchName;
     private String branchCode;
     private String accountType; // Added accountType field
@@ -14,15 +15,16 @@ public class BankDetails {
     }
 
     public BankDetails(String bankName, String accountNumber, String accountHolderName,
-            String ifscCode, String branchName, String branchCode, String accountType, String swiftCode) {
+            String ifscCode, String swiftCode, String bankCode, String branchName, String branchCode, String accountType) {
         this.bankName = bankName;
         this.accountNumber = accountNumber;
         this.accountHolderName = accountHolderName;
         this.ifscCode = ifscCode;
+        this.swiftCode = swiftCode;
+        this.bankCode = bankCode;
         this.branchName = branchName;
         this.branchCode = branchCode;
         this.accountType = accountType;
-        this.swiftCode = swiftCode;
     }
 
     public String getBankName() {
@@ -63,6 +65,14 @@ public class BankDetails {
 
     public void setSwiftCode(String swiftCode) {
         this.swiftCode = swiftCode;
+    }
+
+    public String getBankCode() {
+        return bankCode;
+    }
+
+    public void setBankCode(String bankCode) {
+        this.bankCode = bankCode;
     }
 
     public String getBranchName() {
