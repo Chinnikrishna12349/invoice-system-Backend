@@ -159,8 +159,10 @@ public class BrevoEmailService implements EmailService, InitializingBean {
             byte[] pdfBytes = pdfService.generateInvoicePdf(invoice);
             sendInvoiceEmailWithPdf(invoice, pdfBytes, additionalEmails);
         } catch (Exception e) {
-            System.err.println("Error generating PDF or sending email in background: " + e.getMessage());
+            String errorMsg = "Error generating PDF or sending email: " + e.getMessage();
+            System.err.println(errorMsg);
             e.printStackTrace();
+            throw new RuntimeException(errorMsg, e);
         }
     }
 
