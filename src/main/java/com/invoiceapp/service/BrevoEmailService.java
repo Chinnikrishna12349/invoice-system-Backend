@@ -898,9 +898,8 @@ public class BrevoEmailService implements EmailService, InitializingBean {
     }
 
     private String resolveSenderEmail(InvoiceDTO invoice) {
-        if (invoice != null && StringUtils.hasText(invoice.getFromEmail())) {
-            return invoice.getFromEmail().trim();
-        }
+        // Always use the verified sender email from configuration to ensure delivery
+        // Previous logic used invoice.getFromEmail() which would fail if not verified in Brevo
         return senderEmail;
     }
 }
