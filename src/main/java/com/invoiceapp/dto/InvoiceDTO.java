@@ -27,7 +27,8 @@ public class InvoiceDTO {
     private String employeeAddress;
     @NotBlank(message = "Employee mobile is required")
     private String employeeMobile;
-    @NotNull(message = "Services list is required")
+    @jakarta.validation.constraints.NotEmpty(message = "At least one service item is required")
+    @jakarta.validation.Valid
     private List<ServiceItem> services;
     @NotNull(message = "Tax rate is required")
     private Double taxRate;

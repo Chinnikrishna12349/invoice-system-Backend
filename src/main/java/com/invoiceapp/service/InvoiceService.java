@@ -15,14 +15,17 @@ public class InvoiceService {
     @Autowired
     private InvoiceRepository invoiceRepository;
 
+    @Autowired
+    private com.invoiceapp.repository.CompanyInfoRepository companyInfoRepository;
+
     public InvoiceDTO createInvoice(InvoiceDTO invoiceDTO) {
         System.out.println("Creating new invoice: " + invoiceDTO.getInvoiceNumber());
 
         Invoice invoice = convertToEntity(invoiceDTO);
-        // Let MongoDB generate the ID for new invoices
         invoice.setId(null);
         invoice.setCreatedAt(LocalDateTime.now());
         invoice.setUpdatedAt(LocalDateTime.now());
+        recalculateTotals(invoice);
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
         System.out.println("Invoice saved with ID: " + savedInvoice.getId());
@@ -37,9 +40,9 @@ public class InvoiceService {
 
         invoice.setInvoiceNumber(invoiceDTO.getInvoiceNumber());
         invoice.setDate(invoiceDTO.getDate());
-        invoice.setDueDate(invoiceDTO.getDueDate()); // Added due date mapping
-        invoice.setPoNumber(invoiceDTO.getPoNumber()); // Added poNumber mapping
-        invoice.setFromEmail(invoiceDTO.getFromEmail()); // Added fromEmail mapping
+        invoice.setDueDate(invoiceDTO.getDueDate());
+        invoice.setPoNumber(invoiceDTO.getPoNumber());
+        invoice.setFromEmail(invoiceDTO.getFromEmail());
         invoice.setEmployeeName(invoiceDTO.getEmployeeName());
         invoice.setEmployeeEmail(invoiceDTO.getEmployeeEmail());
         invoice.setEmployeeAddress(invoiceDTO.getEmployeeAddress());
@@ -50,15 +53,14 @@ public class InvoiceService {
         invoice.setSgstRate(invoiceDTO.getSgstRate());
         invoice.setShowConsumptionTax(invoiceDTO.getShowConsumptionTax());
         invoice.setRoundOff(invoiceDTO.getRoundOff());
+        // We set finalAmount to DTO's value if provided, but recalculateTotals will override if logic dictates
         invoice.setFinalAmount(invoiceDTO.getFinalAmount());
-        invoice.setSignatureUrl(invoiceDTO.getSignatureUrl()); // Added signatureUrl mapping
-        invoice.setCompany(invoiceDTO.getCompany()); // Added company mapping
+        invoice.setSignatureUrl(invoiceDTO.getSignatureUrl());
+        invoice.setCompany(invoiceDTO.getCompany());
         invoice.setUpdatedAt(LocalDateTime.now());
-
         invoice.setCountry(invoiceDTO.getCountry());
         invoice.setClientType(invoiceDTO.getClientType());
 
-        // Map CompanyInfo DTO to Entity
         if (invoiceDTO.getCompanyInfo() != null) {
             com.invoiceapp.entity.CompanyInfo companyInfo = invoice.getCompanyInfo();
             if (companyInfo == null) {
@@ -90,6 +92,8 @@ public class InvoiceService {
             invoice.setCompanyInfo(companyInfo);
         }
 
+        recalculateTotals(invoice);
+
         Invoice updatedInvoice = invoiceRepository.save(invoice);
         return convertToDTO(updatedInvoice);
     }
@@ -100,14 +104,12 @@ public class InvoiceService {
     }
 
     public InvoiceDTO getInvoiceById(String id) {
-        System.out.println("Fetching invoice: " + id);
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Invoice not found with id: " + id));
         return convertToDTO(invoice);
     }
 
     public List<InvoiceDTO> getAllInvoices(String userId) {
-        System.out.println("Fetching all invoices for user: " + userId);
         if (userId == null || userId.isEmpty()) {
             return invoiceRepository.findAllByOrderByCreatedAtDesc()
                     .stream()
@@ -120,26 +122,15 @@ public class InvoiceService {
                 .collect(Collectors.toList());
     }
 
-    public List<InvoiceDTO> getAllInvoices() {
-        return getAllInvoices(null);
-    }
-
-    @Autowired
-    private com.invoiceapp.repository.CompanyInfoRepository companyInfoRepository;
-
     public String getNextInvoiceNumber(String userId) {
-        String format = "INV-"; // Default
+        String format = "INV-";
         if (userId != null) {
             com.invoiceapp.entity.CompanyInfo companyInfo = companyInfoRepository.findByUserId(userId).orElse(null);
             if (companyInfo != null && companyInfo.getInvoiceFormat() != null) {
                 format = companyInfo.getInvoiceFormat();
             }
         }
-
         long count = userId != null ? invoiceRepository.countByUserId(userId) : invoiceRepository.count();
-        // If isolate is strictly enforced, we should rely on countByUserId.
-        // Logic: count + 1.
-        // e.g. 0 invoices -> count=0 -> next=1
         return format + (count + 1);
     }
 
@@ -148,9 +139,9 @@ public class InvoiceService {
         invoice.setId(dto.getId());
         invoice.setInvoiceNumber(dto.getInvoiceNumber());
         invoice.setDate(dto.getDate());
-        invoice.setDueDate(dto.getDueDate()); // Added due date mapping
-        invoice.setPoNumber(dto.getPoNumber()); // Added poNumber mapping
-        invoice.setFromEmail(dto.getFromEmail()); // Added fromEmail mapping
+        invoice.setDueDate(dto.getDueDate());
+        invoice.setPoNumber(dto.getPoNumber());
+        invoice.setFromEmail(dto.getFromEmail());
         invoice.setEmployeeName(dto.getEmployeeName());
         invoice.setEmployeeEmail(dto.getEmployeeEmail());
         invoice.setEmployeeAddress(dto.getEmployeeAddress());
@@ -164,11 +155,10 @@ public class InvoiceService {
         invoice.setFinalAmount(dto.getFinalAmount());
         invoice.setCountry(dto.getCountry());
         invoice.setUserId(dto.getUserId());
-        invoice.setClientType(dto.getClientType()); // Added clientType mapping
-        invoice.setSignatureUrl(dto.getSignatureUrl()); // Added signatureUrl mapping
-        invoice.setCompany(dto.getCompany()); // Added company mapping
+        invoice.setClientType(dto.getClientType());
+        invoice.setSignatureUrl(dto.getSignatureUrl());
+        invoice.setCompany(dto.getCompany());
 
-        // Map CompanyInfo DTO to Entity
         if (dto.getCompanyInfo() != null) {
             com.invoiceapp.entity.CompanyInfo companyInfo = new com.invoiceapp.entity.CompanyInfo();
             companyInfo.setId(dto.getCompanyInfo().getId());
@@ -187,13 +177,12 @@ public class InvoiceService {
                 bankDetails.setBranchName(dto.getCompanyInfo().getBankDetails().getBranchName());
                 bankDetails.setBranchCode(dto.getCompanyInfo().getBankDetails().getBranchCode());
                 bankDetails.setAccountType(dto.getCompanyInfo().getBankDetails().getAccountType());
-                bankDetails.setSwiftCode(dto.getCompanyInfo().getBankDetails().getSwiftCode()); // Map Swift Code
-                bankDetails.setBankCode(dto.getCompanyInfo().getBankDetails().getBankCode()); // Map Bank Code
+                bankDetails.setSwiftCode(dto.getCompanyInfo().getBankDetails().getSwiftCode());
+                bankDetails.setBankCode(dto.getCompanyInfo().getBankDetails().getBankCode());
                 companyInfo.setBankDetails(bankDetails);
             }
             invoice.setCompanyInfo(companyInfo);
         }
-
         return invoice;
     }
 
@@ -203,7 +192,6 @@ public class InvoiceService {
         dto.setInvoiceNumber(entity.getInvoiceNumber());
         dto.setUserId(entity.getUserId());
 
-        // Map CompanyInfo Entity to DTO
         if (entity.getCompanyInfo() != null) {
             com.invoiceapp.dto.CompanyInfoDTO companyInfoDTO = new com.invoiceapp.dto.CompanyInfoDTO();
             companyInfoDTO.setId(entity.getCompanyInfo().getId());
@@ -222,17 +210,17 @@ public class InvoiceService {
                 bankDetailsDTO.setBranchName(entity.getCompanyInfo().getBankDetails().getBranchName());
                 bankDetailsDTO.setBranchCode(entity.getCompanyInfo().getBankDetails().getBranchCode());
                 bankDetailsDTO.setAccountType(entity.getCompanyInfo().getBankDetails().getAccountType());
-                bankDetailsDTO.setSwiftCode(entity.getCompanyInfo().getBankDetails().getSwiftCode()); // Map Swift Code
-                bankDetailsDTO.setBankCode(entity.getCompanyInfo().getBankDetails().getBankCode()); // Map Bank Code
+                bankDetailsDTO.setSwiftCode(entity.getCompanyInfo().getBankDetails().getSwiftCode());
+                bankDetailsDTO.setBankCode(entity.getCompanyInfo().getBankDetails().getBankCode());
                 companyInfoDTO.setBankDetails(bankDetailsDTO);
             }
             dto.setCompanyInfo(companyInfoDTO);
         }
 
         dto.setDate(entity.getDate());
-        dto.setDueDate(entity.getDueDate()); // Added due date mapping
-        dto.setPoNumber(entity.getPoNumber()); // Added poNumber mapping
-        dto.setFromEmail(entity.getFromEmail()); // Added fromEmail mapping
+        dto.setDueDate(entity.getDueDate());
+        dto.setPoNumber(entity.getPoNumber());
+        dto.setFromEmail(entity.getFromEmail());
         dto.setEmployeeName(entity.getEmployeeName());
         dto.setEmployeeEmail(entity.getEmployeeEmail());
         dto.setEmployeeAddress(entity.getEmployeeAddress());
@@ -245,11 +233,37 @@ public class InvoiceService {
         dto.setRoundOff(entity.getRoundOff());
         dto.setFinalAmount(entity.getFinalAmount());
         dto.setCountry(entity.getCountry());
-        dto.setClientType(entity.getClientType()); // Added clientType mapping
-        dto.setSignatureUrl(entity.getSignatureUrl()); // Added signatureUrl mapping
-        dto.setCompany(entity.getCompany()); // Added company mapping
+        dto.setClientType(entity.getClientType());
+        dto.setSignatureUrl(entity.getSignatureUrl());
+        dto.setCompany(entity.getCompany());
         dto.setCreatedAt(entity.getCreatedAt() != null ? entity.getCreatedAt().toString() : null);
         dto.setUpdatedAt(entity.getUpdatedAt() != null ? entity.getUpdatedAt().toString() : null);
         return dto;
+    }
+
+    private void recalculateTotals(Invoice invoice) {
+        if (invoice.getServices() == null) return;
+        
+        double subTotal = invoice.getServices().stream().mapToDouble(s -> {
+            double hrs = s.getHours() != null ? s.getHours() : 0.0;
+            double rt = s.getRate() != null ? s.getRate() : 0.0;
+            return Math.round((hrs * rt) * 100.0) / 100.0;
+        }).sum();
+
+        double taxAmount = 0.0;
+        if ("india".equalsIgnoreCase(invoice.getCountry())) {
+            double cgst = (invoice.getCgstRate() != null ? invoice.getCgstRate() : 0.0);
+            double sgst = (invoice.getSgstRate() != null ? invoice.getSgstRate() : 0.0);
+            taxAmount = Math.round(subTotal * (cgst / 100.0) * 100.0) / 100.0 +
+                        Math.round(subTotal * (sgst / 100.0) * 100.0) / 100.0;
+        } else {
+            if (invoice.getShowConsumptionTax() != null && invoice.getShowConsumptionTax()) {
+                double tr = (invoice.getTaxRate() != null ? invoice.getTaxRate() : 0.0);
+                taxAmount = Math.round(subTotal * (tr / 100.0) * 100.0) / 100.0;
+            }
+        }
+
+        double roundOff = (invoice.getRoundOff() != null ? invoice.getRoundOff() : 0.0);
+        invoice.setFinalAmount(Math.round((subTotal + taxAmount + roundOff) * 100.0) / 100.0);
     }
 }
