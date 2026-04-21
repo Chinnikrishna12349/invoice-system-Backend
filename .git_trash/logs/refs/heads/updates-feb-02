@@ -1,0 +1,6 @@
+0000000000000000000000000000000000000000 2d1933f7e495624adea13283a2bc3719bc60f69a Chinnikrishna Maddana <chnn@mail.com> 1770032496 +0530	branch: Created from HEAD
+2d1933f7e495624adea13283a2bc3719bc60f69a dff2ae396a84f8e1a285930907f5646dbe22c102 Chinnikrishna Maddana <chnn@mail.com> 1770032784 +0530	commit: Refinement: Fix consumption tax persistence and PDF synchronization
+dff2ae396a84f8e1a285930907f5646dbe22c102 68f62f49dba76747e61b3907ff7f7fae68b4ea8b Chinnikrishna Maddana <chnn@mail.com> 1770033036 +0530	reset: moving to origin/main
+68f62f49dba76747e61b3907ff7f7fae68b4ea8b 241d311a89a3da0d849a4a9801474dc16b24a4a1 Chinnikrishna Maddana <chnn@mail.com> 1770033036 +0530	commit: Refinement: Fix consumption tax persistence and PDF synchronization
+241d311a89a3da0d849a4a9801474dc16b24a4a1 1a6eaf8049fb563468b838b77890b41cb1d950af Chinnikrishna Maddana <chnn@mail.com> 1770275998 +0530	commit: Enhancement: Dynamic email body and synchronized PDF filenames; Fix: Email delivery
+1a6eaf8049fb563468b838b77890b41cb1d950af 0b0fd220575b7e04a1c7521169615ae034ecd3cf Chinnikrishna Maddana <chnn@mail.com> 1770276073 +0530	commit: Update: Customize email and PDF filename formatting; Fix: Email connectivity configuration

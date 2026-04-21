@@ -247,7 +247,12 @@ public class InvoiceService {
         double subTotal = invoice.getServices().stream().mapToDouble(s -> {
             double hrs = s.getHours() != null ? s.getHours() : 0.0;
             double rt = s.getRate() != null ? s.getRate() : 0.0;
-            return Math.round((hrs * rt) * 100.0) / 100.0;
+            double perc = s.getPercentage() != null ? s.getPercentage() : 0.0;
+            double lineTotal = hrs * rt;
+            if (perc != 0) {
+                lineTotal += (lineTotal * (perc / 100.0));
+            }
+            return Math.round(lineTotal * 100.0) / 100.0;
         }).sum();
 
         double taxAmount = 0.0;
