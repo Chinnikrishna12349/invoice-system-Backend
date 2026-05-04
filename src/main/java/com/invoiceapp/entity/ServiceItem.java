@@ -1,6 +1,7 @@
 package com.invoiceapp.entity;
 
 public class ServiceItem {
+    private String id;
     private String overtime; // Normal Days, Weekends, Holidays
     private String description;
     private String shift; // 9:00 AM – 10:00 PM, 10:00 PM – 5:00 AM
