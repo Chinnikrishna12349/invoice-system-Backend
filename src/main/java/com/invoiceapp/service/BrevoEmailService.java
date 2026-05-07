@@ -347,41 +347,7 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                             "DEBUG: API Key prefix: " + (cleanedKey.length() > 8 ? cleanedKey.substring(0, 8) : "short")
                                     + " (total length: " + cleanedKey.length() + ")");
 
-                    Map<String, Object> response = brevoWebClient.post()
-                            .uri(BREVO_API_PATH)
-                            .header("api-key", cleanedKey)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .bodyValue(request)
-                            .retrieve()
-                            .onStatus(
-                                    httpStatus -> httpStatus.isError(),
-                                    clientResponse -> clientResponse.bodyToMono(String.class)
-                                            .defaultIfEmpty("No error details provided")
-                                            .flatMap(errorBody -> {
-                                                String statusCode = clientResponse.statusCode().toString();
-                                                String errorMessage = String.format(
-                                                        "Brevo API request failed with status %s: %s",
-                                                        statusCode, errorBody);
-                                                System.err.println("BREVO ERROR: " + errorMessage);
-                                                logger.error(errorMessage);
-                                                logger.error("Request details - Sender: {}, Recipient: {}", senderEmail,
-                                                        recipientEmail);
-
-                                                if (clientResponse.statusCode() == HttpStatus.UNAUTHORIZED) {
-                                                    System.err.println("CRITICAL: 401 Unauthorized from Brevo. Error: "
-                                                            + errorBody);
-                                                    return Mono.error(new SecurityException(
-                                                            "Invalid Brevo API key. Brevo says: " + errorBody));
-                                                } else if (clientResponse
-                                                        .statusCode() == HttpStatus.TOO_MANY_REQUESTS) {
-                                                    return Mono.error(new IllegalStateException(
-                                                            "Rate limit exceeded. Please try again later."));
-                                                } else {
-                                                    return Mono.error(new RuntimeException(errorMessage));
-                                                }
-                                            }))
-                            .bodyToMono(Map.class)
-                            .block();
+                    Map<String, Object> response = sendToBrevo(request);
 
                     System.out.println("DEBUG: Brevo response received successfully");
 
@@ -453,36 +419,7 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                 throw new IllegalStateException("Failed to build email request: Empty or null request");
             }
 
-            return Optional.ofNullable(brevoWebClient.post()
-                    .uri(BREVO_API_PATH)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .header("api-key", brevoApiKey != null ? brevoApiKey.trim() : "")
-                    .bodyValue(emailRequest)
-                    .retrieve()
-                    .onStatus(
-                            status -> status.isError(),
-                            response -> response.bodyToMono(String.class)
-                                    .defaultIfEmpty("No error details provided")
-                                    .flatMap(errorBody -> {
-                                        String statusCode = response.statusCode().toString();
-                                        String errorMessage = String.format(
-                                                "Brevo API request failed with status %s: %s",
-                                                statusCode, errorBody);
-                                        logger.error(errorMessage);
-
-                                        if (response.statusCode() == HttpStatus.UNAUTHORIZED) {
-                                            return Mono.error(new SecurityException(
-                                                    "Invalid Brevo API key. Please check your configuration."));
-                                        } else if (response.statusCode() == HttpStatus.TOO_MANY_REQUESTS) {
-                                            return Mono.error(new IllegalStateException(
-                                                    "Rate limit exceeded. Please try again later."));
-                                        } else {
-                                            return Mono.error(new RuntimeException(errorMessage));
-                                        }
-                                    }))
-                    .bodyToMono(Map.class)
-                    .block())
-                    .orElse(Collections.emptyMap());
+            return sendToBrevo(emailRequest);
         } catch (Exception e) {
             logger.error("Error sending email via Brevo API: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
@@ -864,7 +801,7 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                             "</body></html>",
                     escapeHtml(invoice.getEmployeeName()),
                     invoice.getInvoiceNumber(),
-                    fileUrl,
+                    baseUrl + (fileUrl.startsWith("/") ? fileUrl : "/" + fileUrl),
                     senderName);
 
             // Build the email request
@@ -893,6 +830,9 @@ public class BrevoEmailService implements EmailService, InitializingBean {
             emailRequest.put("subject", subject);
             emailRequest.put("htmlContent", htmlContent);
 
+            // ACTUAL API CALL (Was missing!)
+            sendToBrevo(emailRequest);
+
             logger.info("Sent email with download link for invoice #{}", invoice.getInvoiceNumber());
 
         } catch (Exception e) {
@@ -906,5 +846,56 @@ public class BrevoEmailService implements EmailService, InitializingBean {
         // Always use the verified sender email from configuration to ensure delivery
         // Previous logic used invoice.getFromEmail() which would fail if not verified in Brevo
         return senderEmail;
+    }
+
+    /**
+     * Unified method to send request to Brevo API with robust error handling and logging
+     */
+    private Map<String, Object> sendToBrevo(Map<String, Object> request) {
+        String cleanedKey = cleanKey(brevoApiKey);
+        if (!StringUtils.hasText(cleanedKey) || "NONE".equals(cleanedKey)) {
+            throw new IllegalStateException("Brevo API key is not configured.");
+        }
+
+        try {
+            System.out.println("DEBUG: Executing Brevo API request...");
+            
+            return Optional.ofNullable(brevoWebClient.post()
+                    .uri(BREVO_API_PATH)
+                    .header("api-key", cleanedKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .onStatus(
+                            status -> status.isError(),
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .defaultIfEmpty("No error details provided")
+                                    .flatMap(errorBody -> {
+                                        String statusCode = clientResponse.statusCode().toString();
+                                        String errorMessage = String.format(
+                                                "Brevo API request failed with status %s: %s",
+                                                statusCode, errorBody);
+                                        
+                                        System.err.println("BREVO ERROR: " + errorMessage);
+                                        logger.error(errorMessage);
+                                        
+                                        // Specific error handling for common Brevo issues
+                                        if (clientResponse.statusCode() == HttpStatus.UNAUTHORIZED) {
+                                            return Mono.error(new SecurityException("Invalid Brevo API key. Check environment variables."));
+                                        } else if (clientResponse.statusCode() == HttpStatus.FORBIDDEN) {
+                                            return Mono.error(new RuntimeException("Access forbidden. Ensure the sender email is verified in Brevo. Details: " + errorBody));
+                                        } else if (clientResponse.statusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                                            return Mono.error(new IllegalStateException("Rate limit exceeded."));
+                                        } else {
+                                            return Mono.error(new RuntimeException(errorMessage));
+                                        }
+                                    }))
+                    .bodyToMono(Map.class)
+                    .block())
+                    .orElse(Collections.emptyMap());
+        } catch (Exception e) {
+            logger.error("Fatal error during Brevo API call: {}", e.getMessage());
+            throw e;
+        }
     }
 }

@@ -172,7 +172,8 @@ public class InvoiceController {
 
             String recipientsStr = invoice.getEmployeeEmail()
                     + (additionalEmails.isEmpty() ? "" : " and " + additionalEmails.size() + " others");
-            return ResponseEntity.ok(ApiResponse.success("Email sent successfully to " + recipientsStr));
+            String deliveryMethod = (pdfBytes != null && pdfBytes.length > 9 * 1024 * 1024) ? "via download link" : "with PDF attachment";
+            return ResponseEntity.ok(ApiResponse.success("Email sent successfully " + deliveryMethod + " to " + recipientsStr));
         } catch (Exception e) {
             logger.error("Error sending email for invoice {}: {}", id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
