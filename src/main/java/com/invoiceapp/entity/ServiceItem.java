@@ -47,10 +47,6 @@ public class ServiceItem {
     public void setPercentage(Double percentage) { this.percentage = percentage; }
     
     public Double getTotal() {
-        double base = (hours != null ? hours : 0.0) * (rate != null ? rate : 0.0);
-        if (percentage != null && percentage != 0) {
-            return base + (base * (percentage / 100.0));
-        }
-        return base;
+        return Math.round((hours != null ? hours : 0.0) * (rate != null ? rate : 0.0) * 100.0) / 100.0;
     }
 }

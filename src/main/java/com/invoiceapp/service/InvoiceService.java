@@ -247,11 +247,7 @@ public class InvoiceService {
         double subTotal = invoice.getServices().stream().mapToDouble(s -> {
             double hrs = s.getHours() != null ? s.getHours() : 0.0;
             double rt = s.getRate() != null ? s.getRate() : 0.0;
-            double perc = s.getPercentage() != null ? s.getPercentage() : 0.0;
             double lineTotal = hrs * rt;
-            if (perc != 0) {
-                lineTotal += (lineTotal * (perc / 100.0));
-            }
             return Math.round(lineTotal * 100.0) / 100.0;
         }).sum();
 
@@ -269,6 +265,11 @@ public class InvoiceService {
         }
 
         double roundOff = (invoice.getRoundOff() != null ? invoice.getRoundOff() : 0.0);
-        invoice.setFinalAmount(Math.round((subTotal + taxAmount + roundOff) * 100.0) / 100.0);
+        double total = subTotal + taxAmount + roundOff;
+        if ("japan".equalsIgnoreCase(invoice.getCountry())) {
+            invoice.setFinalAmount((double) Math.round(total));
+        } else {
+            invoice.setFinalAmount(Math.round(total * 100.0) / 100.0);
+        }
     }
 }

@@ -502,18 +502,16 @@ public class PdfGeneratorService {
                 .setHorizontalAlignment(HorizontalAlignment.RIGHT)
                 .setMarginTop(20);
 
-        double tax = subtotal * 0.10; // 10% Consumption Tax
-        double grandTotal = subtotal + tax;
+        double taxRate = (invoice.getTaxRate() != null) ? invoice.getTaxRate() : 10.0;
+        double tax = Math.round((subtotal * (taxRate / 100.0)) * 100.0) / 100.0;
+        double grandTotal = "japan".equalsIgnoreCase(invoice.getCountry()) ? Math.round(subtotal + tax) : Math.round((subtotal + tax) * 100.0) / 100.0;
 
         totalTable.addCell(createTotalCell("SubTotal", regular, 11));
         totalTable.addCell(createTotalCell(formatCurrency(subtotal, invoice.getCountry()), regular, 11));
 
-        String taxLabel = "japan".equalsIgnoreCase(invoice.getCountry()) ? "Consumption Tax (10%)" : "Tax (10%)"; // Simplified tax label logic for now
-        // Ideally split CGST/SGST if India, but for now just label appropriately or use existing singular logic
-        // The current logic calculates 10% regardless. 
-        // User requested "calculate in yen not rupees", implicitly asking for correct formatting.
-        // I will stick to single line tax for now unless specifically asked to crack open the CGST/SGST split in backend PDF (which was simpler in frontend).
-        // Actually, the previous code had only one tax line. I will keep it but format it.
+        String taxLabel = "japan".equalsIgnoreCase(invoice.getCountry()) ? 
+            String.format("Consumption Tax (%.0f%%)", taxRate) : 
+            String.format("Tax (%.0f%%)", taxRate);
         
         totalTable.addCell(createTotalCell(taxLabel, regular, 11));
         totalTable.addCell(createTotalCell(formatCurrency(tax, invoice.getCountry()), regular, 11));
