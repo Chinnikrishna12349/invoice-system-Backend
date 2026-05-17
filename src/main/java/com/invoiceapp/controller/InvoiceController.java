@@ -161,9 +161,29 @@ public class InvoiceController {
             // If PDF bytes are provided (from frontend), use them; otherwise generate on
             // backend
             if (pdfBytes != null && pdfBytes.length > 0) {
-                logger.info("Using frontend-generated PDF for invoice #{} ({} bytes) with {} additional recipients",
-                        invoice.getInvoiceNumber(), pdfBytes.length, additionalEmails.size());
-                emailService.sendInvoiceEmailWithPdf(invoice, pdfBytes, additionalEmails);
+                String bodyStr = new String(pdfBytes, java.nio.charset.StandardCharsets.UTF_8).trim();
+                if (bodyStr.startsWith("[") || bodyStr.startsWith("{")) {
+                    logger.info("Parsing multiple attachments from JSON request for invoice #{}", invoice.getInvoiceNumber());
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    List<com.invoiceapp.service.EmailService.Attachment> attachments;
+                    if (bodyStr.startsWith("[")) {
+                        attachments = mapper.readValue(bodyStr, new com.fasterxml.jackson.core.type.TypeReference<List<com.invoiceapp.service.EmailService.Attachment>>() {});
+                    } else {
+                        java.util.Map<String, Object> map = mapper.readValue(bodyStr, java.util.Map.class);
+                        List<java.util.Map<String, String>> attList = (List<java.util.Map<String, String>>) map.get("attachments");
+                        attachments = new java.util.ArrayList<>();
+                        if (attList != null) {
+                            for (java.util.Map<String, String> attMap : attList) {
+                                attachments.add(new com.invoiceapp.service.EmailService.Attachment(attMap.get("name"), attMap.get("content")));
+                            }
+                        }
+                    }
+                    emailService.sendInvoiceEmailWithMultiplePdfs(invoice, attachments, additionalEmails);
+                } else {
+                    logger.info("Using frontend-generated PDF for invoice #{} ({} bytes) with {} additional recipients",
+                            invoice.getInvoiceNumber(), pdfBytes.length, additionalEmails.size());
+                    emailService.sendInvoiceEmailWithPdf(invoice, pdfBytes, additionalEmails);
+                }
             } else {
                 logger.info("Generating PDF on backend for invoice #{} with {} additional recipients",
                         invoice.getInvoiceNumber(), additionalEmails.size());

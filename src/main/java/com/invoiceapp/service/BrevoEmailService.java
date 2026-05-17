@@ -396,6 +396,144 @@ public class BrevoEmailService implements EmailService, InitializingBean {
         }
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public void sendInvoiceEmailWithMultiplePdfs(InvoiceDTO invoice, List<Attachment> attachments, List<String> additionalEmails) {
+        if (invoice == null) {
+            throw new IllegalArgumentException("Invoice cannot be null");
+        }
+        if (attachments == null || attachments.isEmpty()) {
+            throw new IllegalArgumentException("Attachments list cannot be null or empty");
+        }
+
+        System.out.println("=== Sending Email with Multiple PDF Attachments ===");
+        System.out.println("From: " + senderName + " <" + senderEmail + ">");
+        System.out.println("To: " + invoice.getEmployeeEmail()
+                + (additionalEmails != null && !additionalEmails.isEmpty() ? " + " + additionalEmails : ""));
+        System.out.println("Attachments count: " + attachments.size());
+        System.out.println("==============================================");
+
+        String recipientEmail = invoice.getEmployeeEmail();
+        if (!isValidEmail(recipientEmail)) {
+            throw new IllegalArgumentException("Invalid recipient email: " + recipientEmail);
+        }
+
+        String subject = String.format("Invoice #%s - %s",
+                invoice.getInvoiceNumber(),
+                StringUtils.hasText(invoice.getCompanyName()) ? invoice.getCompanyName() : "Your Invoice");
+
+        String recipientName = StringUtils.hasText(invoice.getEmployeeName()) ? invoice.getEmployeeName()
+                : "Valued Customer";
+
+        try {
+            // Build email content using the existing method
+            String htmlContent = buildEmailBody(invoice);
+
+            // Create email request
+            Map<String, Object> request = new HashMap<>();
+
+            // Sender
+            String finalSenderEmail = resolveSenderEmail(invoice);
+            request.put("sender", Map.of(
+                    "name", senderName,
+                    "email", finalSenderEmail));
+
+            logger.info("ACTUAL SENDER being sent to Brevo: {}", finalSenderEmail);
+
+            // Recipient
+            List<Map<String, String>> recipients = new java.util.ArrayList<>();
+            recipients.add(Map.of(
+                    "email", recipientEmail,
+                    "name", recipientName));
+
+            if (additionalEmails != null) {
+                for (String email : additionalEmails) {
+                    if (isValidEmail(email) && !email.equalsIgnoreCase(recipientEmail)) {
+                        recipients.add(Map.of(
+                                "email", email.trim().toLowerCase(),
+                                "name", "Valued Recipient"));
+                    }
+                }
+            }
+            request.put("to", recipients);
+
+            request.put("subject", subject);
+            request.put("htmlContent", htmlContent);
+
+            // Add PDF attachments
+            List<Map<String, String>> attachmentList = new java.util.ArrayList<>();
+            for (Attachment att : attachments) {
+                attachmentList.add(Map.of(
+                        "name", att.getName(),
+                        "content", att.getContent()));
+            }
+            request.put("attachment", attachmentList);
+
+            logger.info("Sending email with {} PDF attachments for invoice #{}", attachments.size(), invoice.getInvoiceNumber());
+
+            // Send the email with retry logic
+            int attempt = 0;
+            while (attempt < MAX_RETRIES) {
+                try {
+                    attempt++;
+                    logger.debug("Sending email attempt {}/{}", attempt, MAX_RETRIES);
+
+                    System.out.println(
+                            "DEBUG: Preparing to send request to Brevo API for invoice #" + invoice.getInvoiceNumber());
+                    String cleanedKey = cleanKey(brevoApiKey);
+                    System.out.println(
+                            "DEBUG: API Key prefix: " + (cleanedKey.length() > 8 ? cleanedKey.substring(0, 8) : "short")
+                                    + " (total length: " + cleanedKey.length() + ")");
+
+                    Map<String, Object> response = sendToBrevo(request);
+
+                    System.out.println("DEBUG: Brevo response received successfully");
+
+                    if (response != null) {
+                        String messageId = response.get("messageId") != null ? response.get("messageId").toString()
+                                : "unknown";
+                        logger.info(
+                                "Successfully sent email with multiple PDF attachments for invoice #{}. Message ID: {}. Response: {}",
+                                invoice.getInvoiceNumber(), messageId, response);
+                        return;
+                    } else {
+                        logger.warn("No response received from Brevo API for invoice #{}", invoice.getInvoiceNumber());
+                        throw new RuntimeException("No response received from Brevo API");
+                    }
+
+                } catch (Exception e) {
+                    if (attempt >= MAX_RETRIES) {
+                        String errorMsg = String.format("Failed to send invoice #%s after %d attempts: %s",
+                                invoice.getInvoiceNumber(), MAX_RETRIES, e.getMessage());
+                        logger.error(errorMsg, e);
+                        throw new RuntimeException(errorMsg, e);
+                    }
+
+                    try {
+                        long delay = RETRY_DELAY_MS * attempt;
+                        logger.debug("Retrying in {} ms...", delay);
+                        Thread.sleep(delay);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Email sending interrupted", ie);
+                    }
+                }
+            }
+
+        } catch (WebClientResponseException e) {
+            String errorResponse = e.getResponseBodyAsString();
+            logger.error("Error from Brevo API ({}): {}", e.getStatusCode(), errorResponse, e);
+            throw new RuntimeException("Failed to send email with multiple PDFs: " + e.getStatusCode() + " - " + errorResponse,
+                    e);
+        } catch (Exception e) {
+            String errorMsg = String.format("Error sending email with multiple PDFs for invoice #%s: %s",
+                    invoice != null ? invoice.getInvoiceNumber() : "unknown",
+                    e.getMessage());
+            logger.error(errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> sendEmailWithRetry(InvoiceDTO invoice, String recipientEmail) {
         try {
