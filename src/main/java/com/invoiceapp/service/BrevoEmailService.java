@@ -750,10 +750,16 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                 if (StringUtils.hasText(bank.getAccountNumber()))
                     body.append("Account Number: ").append(escapeHtml(bank.getAccountNumber())).append("<br>");
                 boolean isJapan = "japan".equalsIgnoreCase(invoice.getCountry()) || "jp".equalsIgnoreCase(invoice.getCountry());
-                if (isJapan) {
+                boolean isInternational = "international".equalsIgnoreCase(invoice.getCountry());
+                if (isInternational) {
+                    // International: SWIFT Code is mandatory
+                    body.append("Swift Code: ").append(StringUtils.hasText(bank.getSwiftCode()) ? escapeHtml(bank.getSwiftCode()) : "—").append("<br>");
+                } else if (isJapan) {
+                    // Japan Local: SWIFT Code is optional — show only if present
                     if (StringUtils.hasText(bank.getSwiftCode()))
                         body.append("Swift Code: ").append(escapeHtml(bank.getSwiftCode())).append("<br>");
                 } else {
+                    // India: show IFSC code only
                     if (StringUtils.hasText(bank.getIfscCode()))
                         body.append("IFSC Code: ").append(escapeHtml(bank.getIfscCode())).append("<br>");
                 }
@@ -772,7 +778,7 @@ public class BrevoEmailService implements EmailService, InitializingBean {
             
             boolean isJapanForFooter = "japan".equalsIgnoreCase(invoice.getCountry()) || "jp".equalsIgnoreCase(invoice.getCountry());
             if (!isJapanForFooter) {
-                body.append("<p>Thank you for your business!</p>");
+
             }
             body.append("</div>");
 
