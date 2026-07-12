@@ -38,7 +38,10 @@ import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.Locale;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 @Service
+@ConditionalOnProperty(name = "app.email.provider", havingValue = "brevo", matchIfMissing = true)
 public class BrevoEmailService implements EmailService, InitializingBean {
 
     private static final Logger logger = LoggerFactory.getLogger(BrevoEmailService.class);
