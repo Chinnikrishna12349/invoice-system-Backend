@@ -2,7 +2,6 @@ package com.invoiceapp.entity;
 
 public class ServiceItem {
     private String id;
-    private String overtime; // Normal Days, Weekends, Holidays
     private String description;
     private String shift; // 9:00 AM – 10:00 PM, 10:00 PM – 5:00 AM
     @jakarta.validation.constraints.NotNull(message = "Hours are required")
@@ -15,9 +14,8 @@ public class ServiceItem {
     
     public ServiceItem() {}
     
-    public ServiceItem(String id, String overtime, String description, String shift, Double hours, Double rate, Double percentage) {
+    public ServiceItem(String id, String description, String shift, Double hours, Double rate, Double percentage) {
         this.id = id;
-        this.overtime = overtime;
         this.description = description;
         this.shift = shift;
         this.hours = hours;
@@ -28,9 +26,6 @@ public class ServiceItem {
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
-    public String getOvertime() { return overtime; }
-    public void setOvertime(String overtime) { this.overtime = overtime; }
-    
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
