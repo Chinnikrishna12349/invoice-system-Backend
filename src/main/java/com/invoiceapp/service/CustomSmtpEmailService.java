@@ -145,8 +145,11 @@ public class CustomSmtpEmailService implements EmailService {
     }
 
     private String resolveSenderEmail(InvoiceDTO invoice) {
-        if (invoice.getCompany() != null && StringUtils.hasText(invoice.getCompany().getEmail())) {
-            return invoice.getCompany().getEmail().trim();
+        if (StringUtils.hasText(invoice.getFromEmail())) {
+            return invoice.getFromEmail().trim();
+        }
+        if (invoice.getCompanyInfo() != null && StringUtils.hasText(invoice.getCompanyInfo().getFromEmail())) {
+            return invoice.getCompanyInfo().getFromEmail().trim();
         }
         return senderEmail;
     }
