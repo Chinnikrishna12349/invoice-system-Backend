@@ -54,7 +54,7 @@ public class BrevoEmailService implements EmailService, InitializingBean {
     private final FileStorageService fileStorageService;
     private final PdfService pdfService;
 
-    @Value("${brevo.api.key}")
+    @Value("${brevo.api.key:${BREVO_API_KEY:}}")
     private String brevoApiKey;
 
     @Value("${brevo.sender.email:hr@visionai.jp}")
