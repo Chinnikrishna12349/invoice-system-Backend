@@ -60,6 +60,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
+                        }))
                 .authorizeHttpRequests(auth -> auth
                         // Absolute allow for auth and static resources
                         .requestMatchers("/api/auth/**", "/error").permitAll()
