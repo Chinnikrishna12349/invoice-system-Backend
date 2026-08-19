@@ -20,7 +20,6 @@ public class InvoiceDTO {
     private String clientType; // Added clientType
     @NotBlank(message = "Employee name is required")
     private String employeeName;
-    @NotBlank(message = "Employee email is required")
     @Email(message = "Email should be valid")
     private String employeeEmail;
     @NotBlank(message = "Employee address is required")
