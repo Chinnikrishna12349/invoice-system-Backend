@@ -446,81 +446,53 @@ public class PdfService {
                                 String bAccType = getValue(bank.getAccountType());
 
                                 Cell bankCell = new Cell().setBorder(Border.NO_BORDER);
-                                bankCell.add(new Paragraph("Bank Details:").setFont(boldFont).setFontSize(10)
+                                bankCell.add(new Paragraph("Bank Details").setFont(boldFont).setFontSize(11)
                                                 .setMarginBottom(5));
 
-                                float lineSpacing = 16.0f; // Fixed leading for uniform, non-cramped spacing
+                                Table detailsTable = new Table(UnitValue.createPercentArray(new float[] { 35, 5, 60 }))
+                                        .setWidth(UnitValue.createPercentValue(100));
 
-                                if (!bName.isEmpty())
-                                        bankCell.add(new Paragraph()
-                                                        .add(new Text("Bank Name: ").setFont(boldFont).setFontSize(13))
-                                                        .add(new Text(bName).setFont(regularFont).setFontSize(13))
-                                                        .setFixedLeading(lineSpacing).setMargin(0));
-                                if (!bBranch.isEmpty())
-                                        bankCell.add(new Paragraph()
-                                                        .add(new Text("Branch: ").setFont(boldFont).setFontSize(13))
-                                                        .add(new Text(bBranch).setFont(regularFont).setFontSize(13))
-                                                        .setFixedLeading(lineSpacing).setMargin(0));
-                                if (!bBranchCode.isEmpty())
-                                        bankCell.add(new Paragraph()
-                                                        .add(new Text("Branch Code: ").setFont(boldFont)
-                                                                        .setFontSize(11))
-                                                        .add(new Text(bBranchCode).setFont(regularFont).setFontSize(11))
-                                                        .setFixedLeading(lineSpacing).setMargin(0));
-                                if (!bAccType.isEmpty())
-                                        bankCell.add(new Paragraph()
-                                                        .add(new Text("Account Type: ").setFont(boldFont)
-                                                                        .setFontSize(11))
-                                                        .add(new Text(bAccType).setFont(regularFont).setFontSize(11))
-                                                        .setFixedLeading(lineSpacing).setMargin(0));
-                                if (!bAcc.isEmpty())
-                                        bankCell.add(new Paragraph()
-                                                        .add(new Text("Account No: ").setFont(boldFont).setFontSize(11))
-                                                        .add(new Text(bAcc).setFont(regularFont).setFontSize(11))
-                                                        .setFixedLeading(lineSpacing).setMargin(0));
-                                if (!bHolder.isEmpty())
-                                        bankCell.add(new Paragraph()
-                                                        .add(new Text("Account Holder: ").setFont(boldFont)
-                                                                        .setFontSize(13)) // Using fontSize 13 matching
-                                                                                          // original
-                                                        .add(new Text(bHolder).setFont(regularFont).setFontSize(13))
-                                                        .setFixedLeading(lineSpacing).setMargin(0));
+                                String[][] bankDetailsArray = {
+                                    {"Bank Name", bName},
+                                    {"Bank Code", getValue(bank.getBankCode())},
+                                    {"Branch Name", bBranch},
+                                    {"Branch Code", bBranchCode},
+                                    {"Account Type", bAccType},
+                                    {"Account No", bAcc},
+                                    {"Account Name", bHolder}
+                                };
 
+                                for(String[] detail : bankDetailsArray) {
+                                    if(detail[1] != null && !detail[1].isEmpty()) {
+                                        detailsTable.addCell(new Cell().add(new Paragraph(detail[0]).setFont(boldFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
+                                        detailsTable.addCell(new Cell().add(new Paragraph(":").setFont(boldFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
+                                        detailsTable.addCell(new Cell().add(new Paragraph(detail[1]).setFont(regularFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
+                                    }
+                                }
+                                
                                 boolean isJapan = "japan".equalsIgnoreCase(invoice.getCountry()) || "jp".equalsIgnoreCase(invoice.getCountry());
                                 String swiftCode = getValue(bank.getSwiftCode());
                                 String ifscCode = getValue(bank.getIfscCode());
 
                                 if (isJapan) {
-                                        // In Japan, ONLY show Swift Code if explicitly provided. Do NOT fallback to IFSC.
                                         if (!swiftCode.isEmpty()) {
-                                                bankCell.add(new Paragraph()
-                                                                .add(new Text("Swift Code: ").setFont(boldFont)
-                                                                                .setFontSize(11))
-                                                                .add(new Text(swiftCode).setFont(regularFont)
-                                                                                .setFontSize(11))
-                                                                .setFixedLeading(lineSpacing).setMargin(0));
+                                                detailsTable.addCell(new Cell().add(new Paragraph("SWIFT Code").setFont(boldFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
+                                                detailsTable.addCell(new Cell().add(new Paragraph(":").setFont(boldFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
+                                                detailsTable.addCell(new Cell().add(new Paragraph(swiftCode).setFont(regularFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
                                         }
                                 } else {
-                                        // For other countries (India, etc.), prefer Swift Code if available, fallback to IFSC
                                         if (!swiftCode.isEmpty()) {
-                                                bankCell.add(new Paragraph()
-                                                                .add(new Text("Swift Code: ").setFont(boldFont)
-                                                                                .setFontSize(11))
-                                                                .add(new Text(swiftCode).setFont(regularFont)
-                                                                                .setFontSize(11))
-                                                                .setFixedLeading(lineSpacing).setMargin(0));
+                                                detailsTable.addCell(new Cell().add(new Paragraph("SWIFT Code").setFont(boldFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
+                                                detailsTable.addCell(new Cell().add(new Paragraph(":").setFont(boldFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
+                                                detailsTable.addCell(new Cell().add(new Paragraph(swiftCode).setFont(regularFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
                                         } else if (!ifscCode.isEmpty()) {
-                                                if (!isJapan) {
-                                                    bankCell.add(new Paragraph()
-                                                                .add(new Text("IFSC Code: ").setFont(boldFont)
-                                                                                .setFontSize(11))
-                                                                .add(new Text(ifscCode).setFont(regularFont)
-                                                                                .setFontSize(11))
-                                                                .setFixedLeading(lineSpacing).setMargin(0));
-                                                }
+                                                detailsTable.addCell(new Cell().add(new Paragraph("IFSC Code").setFont(boldFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
+                                                detailsTable.addCell(new Cell().add(new Paragraph(":").setFont(boldFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
+                                                detailsTable.addCell(new Cell().add(new Paragraph(ifscCode).setFont(regularFont).setFontSize(11)).setBorder(Border.NO_BORDER).setPadding(0).setMarginBottom(2));
                                         }
                                 }
 
+                                bankCell.add(detailsTable);
                                 footerTable.addCell(bankCell);
                         } else {
                                 footerTable.addCell(new Cell().setBorder(Border.NO_BORDER));
