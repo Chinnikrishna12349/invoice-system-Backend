@@ -24,10 +24,8 @@ public class SecurityConfig {
         return new JwtAuthenticationFilter();
     }
 
-    // Nuclear CORS: Ensure headers are set BEFORE any security or other filters
     @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
-    public CorsFilter corsFilter() {
+    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
@@ -39,7 +37,7 @@ public class SecurityConfig {
         config.addExposedHeader("Content-Type");
         config.setMaxAge(3600L);
         source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
+        return source;
     }
 
     // Disable automatic registration of the JwtFilter as a generic servlet filter
@@ -54,9 +52,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Disable Spring Security's built-in CORS since we have our own high-precedence
-                // filter
-                .cors(cors -> cors.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
