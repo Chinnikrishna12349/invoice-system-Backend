@@ -122,16 +122,24 @@ public class InvoiceService {
                 .collect(Collectors.toList());
     }
 
-    public String getNextInvoiceNumber(String userId) {
+    public String getNextInvoiceNumber(String prefix, String userId) {
         String format = "INV-";
-        if (userId != null) {
+        long count;
+
+        if (prefix != null && !prefix.trim().isEmpty()) {
+            format = prefix;
+            count = invoiceRepository.countByInvoiceNumberStartingWith(prefix);
+        } else if (userId != null) {
             com.invoiceapp.entity.CompanyInfo companyInfo = companyInfoRepository.findByUserId(userId).orElse(null);
             if (companyInfo != null && companyInfo.getInvoiceFormat() != null) {
                 format = companyInfo.getInvoiceFormat();
             }
+            count = invoiceRepository.countByUserId(userId);
+        } else {
+            count = invoiceRepository.count();
         }
-        long count = userId != null ? invoiceRepository.countByUserId(userId) : invoiceRepository.count();
-        return format + (count + 1);
+
+        return format + String.format("%04d", count + 1);
     }
 
     private Invoice convertToEntity(InvoiceDTO dto) {

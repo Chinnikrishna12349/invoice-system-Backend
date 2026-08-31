@@ -18,4 +18,6 @@ public interface InvoiceRepository extends MongoRepository<Invoice, String> {
     List<Invoice> findByUserIdOrderByCreatedAtDesc(String userId);
 
     long countByUserId(String userId);
+
+    long countByInvoiceNumberStartingWith(String prefix);
 }

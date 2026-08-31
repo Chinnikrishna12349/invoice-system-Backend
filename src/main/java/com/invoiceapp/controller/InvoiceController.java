@@ -104,9 +104,11 @@ public class InvoiceController {
     }
 
     @GetMapping("/next-number")
-    public ResponseEntity<ApiResponse<String>> getNextInvoiceNumber(@RequestParam String userId) {
+    public ResponseEntity<ApiResponse<String>> getNextInvoiceNumber(
+            @RequestParam(required = false) String prefix,
+            @RequestParam(required = false) String userId) {
         try {
-            String nextNumber = invoiceService.getNextInvoiceNumber(userId);
+            String nextNumber = invoiceService.getNextInvoiceNumber(prefix, userId);
             return ResponseEntity.ok(ApiResponse.success("Next invoice number fetched", nextNumber));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
