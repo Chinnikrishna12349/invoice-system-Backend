@@ -18,7 +18,28 @@ public class InvoiceService {
     @Autowired
     private com.invoiceapp.repository.CompanyInfoRepository companyInfoRepository;
 
+    private void validateInvoice(InvoiceDTO invoiceDTO) {
+        if (invoiceDTO.getPoNumber() != null && invoiceDTO.getPoNumber().trim().length() > 50) {
+            throw new IllegalArgumentException("PO number cannot exceed 50 characters");
+        }
+        if (invoiceDTO.getDate() != null && !invoiceDTO.getDate().trim().isEmpty() &&
+            invoiceDTO.getDueDate() != null && !invoiceDTO.getDueDate().trim().isEmpty()) {
+            try {
+                java.time.LocalDate invoiceDate = java.time.LocalDate.parse(invoiceDTO.getDate().trim());
+                java.time.LocalDate dueDate = java.time.LocalDate.parse(invoiceDTO.getDueDate().trim());
+                if (dueDate.isBefore(invoiceDate)) {
+                    throw new IllegalArgumentException("Due date cannot be earlier than invoice date");
+                }
+            } catch (java.time.format.DateTimeParseException e) {
+                if (invoiceDTO.getDueDate().compareTo(invoiceDTO.getDate()) < 0) {
+                    throw new IllegalArgumentException("Due date cannot be earlier than invoice date");
+                }
+            }
+        }
+    }
+
     public InvoiceDTO createInvoice(InvoiceDTO invoiceDTO) {
+        validateInvoice(invoiceDTO);
         System.out.println("Creating new invoice: " + invoiceDTO.getInvoiceNumber());
 
         Invoice invoice = convertToEntity(invoiceDTO);
@@ -33,6 +54,7 @@ public class InvoiceService {
     }
 
     public InvoiceDTO updateInvoice(String id, InvoiceDTO invoiceDTO) {
+        validateInvoice(invoiceDTO);
         System.out.println("Updating invoice: " + id);
 
         Invoice invoice = invoiceRepository.findById(id)

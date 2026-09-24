@@ -4,6 +4,7 @@ import com.invoiceapp.entity.ServiceItem;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.annotation.Transient;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public class InvoiceDTO {
     @NotBlank(message = "Date is required")
     private String date;
     private String dueDate; // Added due date
+    @Size(max = 50, message = "PO number cannot exceed 50 characters")
     private String poNumber; // Added PO Number
     private String company; // Added company field for sender identification
     private String fromEmail; // Added From Email field

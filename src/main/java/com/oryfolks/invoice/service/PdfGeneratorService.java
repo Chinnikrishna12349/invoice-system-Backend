@@ -531,13 +531,17 @@ public class PdfGeneratorService {
                 .setMarginTop(50);
 
         boolean isJapan = "japan".equalsIgnoreCase(invoice.getCountry());
+        boolean isIndia = "india".equalsIgnoreCase(invoice.getCountry()) || "in".equalsIgnoreCase(invoice.getCountry());
         String bankDetailsText = "Account Name: \n" +
                                  "Account No: \n";
         
-        if (!isJapan) {
+        if (isIndia) {
             bankDetailsText += "IFSC: \n";
+        } else if (isJapan) {
+            bankDetailsText += "Branch Code: ";
+        } else {
+            bankDetailsText += "IFSC: \nBranch Code: ";
         }
-        bankDetailsText += "Branch Code: ";
 
         Paragraph bankPara = new Paragraph()
                 .add(new Text("Bank Details:\n").setFont(bold).setFontSize(10))

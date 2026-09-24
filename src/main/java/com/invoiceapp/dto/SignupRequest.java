@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class SignupRequest {
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
+    @Size(max = 254, message = "Email cannot exceed 254 characters")
     private String email;
 
     @NotBlank(message = "Password is required")
@@ -20,7 +21,6 @@ public class SignupRequest {
     @NotBlank(message = "Company name is required")
     private String companyName;
 
-    @NotBlank(message = "Company address is required")
     @NotBlank(message = "Company address is required")
     private String companyAddress;
 

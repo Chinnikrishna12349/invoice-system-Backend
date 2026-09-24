@@ -452,11 +452,12 @@ public class PdfService {
                                 Table detailsTable = new Table(UnitValue.createPercentArray(new float[] { 35, 5, 60 }))
                                         .setWidth(UnitValue.createPercentValue(100));
 
+                                boolean isIndia = "india".equalsIgnoreCase(invoice.getCountry()) || "in".equalsIgnoreCase(invoice.getCountry());
                                 String[][] bankDetailsArray = {
                                     {"Bank Name", bName},
-                                    {"Bank Code", getValue(bank.getBankCode())},
+                                    {"Bank Code", isIndia ? null : getValue(bank.getBankCode())},
                                     {"Branch Name", bBranch},
-                                    {"Branch Code", bBranchCode},
+                                    {"Branch Code", isIndia ? null : bBranchCode},
                                     {"Account Type", bAccType},
                                     {"Account No", bAcc},
                                     {"Account Name", bHolder}
