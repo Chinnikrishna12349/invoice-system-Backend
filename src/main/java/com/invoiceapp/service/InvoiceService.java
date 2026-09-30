@@ -19,6 +19,11 @@ public class InvoiceService {
     private com.invoiceapp.repository.CompanyInfoRepository companyInfoRepository;
 
     private void validateInvoice(InvoiceDTO invoiceDTO) {
+        if (invoiceDTO.getCompanyInfo() != null && invoiceDTO.getCompanyInfo().getCompanyAddress() != null) {
+            if (invoiceDTO.getCompanyInfo().getCompanyAddress().trim().length() > 500) {
+                throw new IllegalArgumentException("Company address cannot exceed 500 characters");
+            }
+        }
         if (invoiceDTO.getPoNumber() != null && invoiceDTO.getPoNumber().trim().length() > 50) {
             throw new IllegalArgumentException("PO number cannot exceed 50 characters");
         }

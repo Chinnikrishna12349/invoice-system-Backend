@@ -1,8 +1,11 @@
 package com.invoiceapp.dto;
 
+import jakarta.validation.constraints.Size;
+
 public class CompanyInfoDTO {
     private String id;
     private String companyName;
+    @Size(max = 500, message = "Company address cannot exceed 500 characters")
     private String companyAddress;
     private String companyLogoUrl;
     private String invoiceFormat;

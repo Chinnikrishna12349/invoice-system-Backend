@@ -39,6 +39,7 @@ public class InvoiceDTO {
     private String updatedAt;
     private String country;
     private String userId; // For data isolation
+    @jakarta.validation.Valid
     private com.invoiceapp.dto.CompanyInfoDTO companyInfo; // Snapshot
     private Boolean showConsumptionTax;
     private Double roundOff;

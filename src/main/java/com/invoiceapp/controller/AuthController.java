@@ -110,6 +110,8 @@ public class AuthController {
             }
             if (companyAddress == null || companyAddress.trim().isEmpty()) {
                 validationErrors.add("Company address is required");
+            } else if (companyAddress.trim().length() > 500) {
+                validationErrors.add("Company address cannot exceed 500 characters");
             }
             if (bankName == null || bankName.trim().isEmpty()) {
                 validationErrors.add("Bank name is required");
@@ -283,6 +285,11 @@ public class AuthController {
             if (userId == null || jwtService.isTokenExpired(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ApiResponse.error("Unauthorized", "Invalid or expired token"));
+            }
+
+            if (companyAddress != null && companyAddress.trim().length() > 500) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("Validation Error", "Company address cannot exceed 500 characters"));
             }
 
             // Build update request

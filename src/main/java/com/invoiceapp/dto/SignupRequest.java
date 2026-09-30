@@ -22,6 +22,7 @@ public class SignupRequest {
     private String companyName;
 
     @NotBlank(message = "Company address is required")
+    @Size(max = 500, message = "Company address cannot exceed 500 characters")
     private String companyAddress;
 
     private String invoiceFormat;
