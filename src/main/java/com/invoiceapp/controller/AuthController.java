@@ -113,18 +113,7 @@ public class AuthController {
             } else if (companyAddress.trim().length() > 500) {
                 validationErrors.add("Company address cannot exceed 500 characters");
             }
-            if (bankName == null || bankName.trim().isEmpty()) {
-                validationErrors.add("Bank name is required");
-            }
-            if (accountNumber == null || accountNumber.trim().isEmpty()) {
-                validationErrors.add("Account number is required");
-            }
-            if (accountHolderName == null || accountHolderName.trim().isEmpty()) {
-                validationErrors.add("Account holder name is required");
-            }
-            if (ifscCode == null || ifscCode.trim().isEmpty()) {
-                validationErrors.add("IFSC code is required");
-            }
+            // Bank details are optional at signup (G22 resolution: bank profiles are managed via /api/bank-accounts)
 
             // Return all validation errors at once
             if (!validationErrors.isEmpty()) {
@@ -143,26 +132,31 @@ public class AuthController {
             signupRequest.setCompanyAddress(companyAddress.trim());
             signupRequest.setCompanyLogo(companyLogo);
             signupRequest.setInvoiceFormat(
-                    invoiceFormat != null && !invoiceFormat.trim().isEmpty() ? invoiceFormat.trim() : "INV-"); // Default
-                                                                                                               // format
-                                                                                                               // if not
-                                                                                                               // provided
+                    invoiceFormat != null && !invoiceFormat.trim().isEmpty() ? invoiceFormat.trim() : "INV-"); // Default format if not provided
 
-            BankDetailsDTO bankDetails = new BankDetailsDTO();
-            bankDetails.setBankName(bankName.trim());
-            bankDetails.setAccountNumber(accountNumber.trim());
-            bankDetails.setAccountHolderName(accountHolderName.trim());
-            bankDetails.setIfscCode(ifscCode.trim());
-            if (branchName != null && !branchName.trim().isEmpty()) {
-                bankDetails.setBranchName(branchName.trim());
+            if (bankName != null && !bankName.trim().isEmpty()) {
+                BankDetailsDTO bankDetails = new BankDetailsDTO();
+                bankDetails.setBankName(bankName.trim());
+                if (accountNumber != null) {
+                    bankDetails.setAccountNumber(accountNumber.trim());
+                }
+                if (accountHolderName != null) {
+                    bankDetails.setAccountHolderName(accountHolderName.trim());
+                }
+                if (ifscCode != null) {
+                    bankDetails.setIfscCode(ifscCode.trim());
+                }
+                if (branchName != null && !branchName.trim().isEmpty()) {
+                    bankDetails.setBranchName(branchName.trim());
+                }
+                if (branchCode != null && !branchCode.trim().isEmpty()) {
+                    bankDetails.setBranchCode(branchCode.trim());
+                }
+                if (accountType != null && !accountType.trim().isEmpty()) {
+                    bankDetails.setAccountType(accountType.trim());
+                }
+                signupRequest.setBankDetails(bankDetails);
             }
-            if (branchCode != null && !branchCode.trim().isEmpty()) {
-                bankDetails.setBranchCode(branchCode.trim());
-            }
-            if (accountType != null && !accountType.trim().isEmpty()) {
-                bankDetails.setAccountType(accountType.trim());
-            }
-            signupRequest.setBankDetails(bankDetails);
 
             SignupResponse response = authService.signup(signupRequest);
             return ResponseEntity.status(HttpStatus.CREATED)
