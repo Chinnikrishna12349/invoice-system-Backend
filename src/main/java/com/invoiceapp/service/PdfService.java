@@ -325,9 +325,8 @@ public class PdfService {
                         yPos += convertMmToPoints(45);
 
                         // ==================== Services Table ====================
-                        // Adjusted to 5 columns with SNO and better widths for large amounts (T3)
-                        // Sync with frontend: { 8, 33, 10, 24.5, 24.5 } approx
-                        Table table = new Table(UnitValue.createPercentArray(new float[] { 8, 33, 12, 23.5f, 23.5f }))
+                        // Adjusted to 5 columns with SNO and better widths for large amounts
+                        Table table = new Table(UnitValue.createPercentArray(new float[] { 6, 32, 12, 22, 28 }))
                                         .setWidth(UnitValue.createPercentValue(100))
                                         .setMarginTop(convertMmToPoints(10));
 
@@ -393,8 +392,8 @@ public class PdfService {
                         document.add(table);
 
                         // ==================== Totals Section ====================
-                        Table totalTable = new Table(UnitValue.createPercentArray(new float[] { 70, 30 }))
-                                        .setWidth(UnitValue.createPercentValue(50))
+                        Table totalTable = new Table(UnitValue.createPercentArray(new float[] { 55, 45 }))
+                                        .setWidth(UnitValue.createPercentValue(60))
                                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
                                         .setMarginTop(20);
 
