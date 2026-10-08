@@ -9,9 +9,11 @@ public class ServiceItem {
     private String shift; // 9:00 AM – 10:00 PM, 10:00 PM – 5:00 AM
     @jakarta.validation.constraints.NotNull(message = "Hours are required")
     @jakarta.validation.constraints.Min(value = 0, message = "Hours cannot be negative")
+    @jakarta.validation.constraints.DecimalMax(value = "100000.0", message = "Hours cannot exceed 100,000")
     private Double hours;
     @jakarta.validation.constraints.NotNull(message = "Rate is required")
     @jakarta.validation.constraints.Min(value = 0, message = "Rate cannot be negative")
+    @jakarta.validation.constraints.DecimalMax(value = "100000000.0", message = "Rate cannot exceed 100,000,000")
     private Double rate;
     private Double percentage;
     
