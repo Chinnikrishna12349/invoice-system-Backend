@@ -29,18 +29,23 @@ public class InvoiceService {
         }
         if (invoiceDTO.getDate() != null && !invoiceDTO.getDate().trim().isEmpty() &&
             invoiceDTO.getDueDate() != null && !invoiceDTO.getDueDate().trim().isEmpty()) {
-            try {
-                java.time.LocalDate invoiceDate = java.time.LocalDate.parse(invoiceDTO.getDate().trim());
-                java.time.LocalDate dueDate = java.time.LocalDate.parse(invoiceDTO.getDueDate().trim());
-                if (dueDate.isBefore(invoiceDate)) {
-                    throw new IllegalArgumentException("Due date cannot be earlier than invoice date");
-                }
-            } catch (java.time.format.DateTimeParseException e) {
-                if (invoiceDTO.getDueDate().compareTo(invoiceDTO.getDate()) < 0) {
-                    throw new IllegalArgumentException("Due date cannot be earlier than invoice date");
-                }
+            java.time.LocalDate invoiceDate = parseDateFlexible(invoiceDTO.getDate().trim());
+            java.time.LocalDate dueDate = parseDateFlexible(invoiceDTO.getDueDate().trim());
+            if (invoiceDate != null && dueDate != null && dueDate.isBefore(invoiceDate)) {
+                throw new IllegalArgumentException("Due date cannot be earlier than invoice date");
             }
         }
+    }
+
+    private java.time.LocalDate parseDateFlexible(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) return null;
+        String[] patterns = { "yyyy-MM-dd", "dd/MM/yyyy", "dd-MM-yyyy", "yyyy/MM/dd" };
+        for (String pattern : patterns) {
+            try {
+                return java.time.LocalDate.parse(dateStr.trim(), java.time.format.DateTimeFormatter.ofPattern(pattern));
+            } catch (Exception ignored) {}
+        }
+        return null;
     }
 
     public InvoiceDTO createInvoice(InvoiceDTO invoiceDTO) {
