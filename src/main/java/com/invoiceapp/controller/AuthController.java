@@ -6,6 +6,7 @@ import com.invoiceapp.service.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -65,110 +66,80 @@ public class AuthController {
                 .body(ApiResponse.error("Validation failed", errorMessage.toString()));
     }
 
-    @PostMapping(value = "/signup", consumes = { "multipart/form-data" }, produces = { "application/json" })
-    public ResponseEntity<ApiResponse<SignupResponse>> signup(
+    @PostMapping(value = "/signup", consumes = { MediaType.APPLICATION_JSON_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
+    public ResponseEntity<ApiResponse<SignupResponse>> signupJson(@RequestBody SignupRequest signupRequest) {
+        return processSignup(signupRequest);
+    }
+
+    @PostMapping(value = "/signup", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
+    public ResponseEntity<ApiResponse<SignupResponse>> signupFormData(
             @RequestParam(value = "email", required = false) String email,
             @RequestParam(value = "password", required = false) String password,
             @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "companyName", required = false) String companyName,
-            @RequestParam(value = "companyAddress", required = false) String companyAddress,
-            @RequestParam(value = "companyLogo", required = false) MultipartFile companyLogo,
-            @RequestParam(value = "bankName", required = false) String bankName,
-            @RequestParam(value = "accountNumber", required = false) String accountNumber,
-            @RequestParam(value = "accountHolderName", required = false) String accountHolderName,
-            @RequestParam(value = "ifscCode", required = false) String ifscCode,
-            @RequestParam(value = "branchName", required = false) String branchName,
-            @RequestParam(value = "branchCode", required = false) String branchCode,
-            @RequestParam(value = "accountType", required = false) String accountType,
-            @RequestParam(value = "invoiceFormat", required = false) String invoiceFormat) {
-        try {
-            // Log received parameters for debugging (without sensitive data)
-            System.out.println("Signup request received:");
-            System.out.println("Email: "
-                    + (email != null && !email.isEmpty() ? email.substring(0, Math.min(3, email.length())) + "***"
-                            : "null/empty"));
-            System.out.println("Name: " + (name != null ? name : "null"));
-            System.out.println("CompanyName: " + (companyName != null ? companyName : "null"));
-            System.out.println("BankName: " + (bankName != null ? bankName : "null"));
-            System.out.println("Has logo: " + (companyLogo != null && !companyLogo.isEmpty()));
+            @RequestParam(value = "fullName", required = false) String fullName,
+            @RequestParam(value = "confirmPassword", required = false) String confirmPassword) {
+        SignupRequest signupRequest = new SignupRequest();
+        signupRequest.setEmail(email);
+        signupRequest.setPassword(password);
+        signupRequest.setName(name != null ? name : fullName);
+        signupRequest.setFullName(fullName != null ? fullName : name);
+        signupRequest.setConfirmPassword(confirmPassword);
+        return processSignup(signupRequest);
+    }
 
-            // Collect all validation errors
+    private ResponseEntity<ApiResponse<SignupResponse>> processSignup(SignupRequest signupRequest) {
+        try {
+            if (signupRequest == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("Validation failed", "Request body is required"));
+            }
+
             java.util.List<String> validationErrors = new java.util.ArrayList<>();
 
-            // Validate required fields
-            if (email == null || email.trim().isEmpty()) {
-                validationErrors.add("Email is required");
-            }
-            if (password == null || password.trim().isEmpty()) {
-                validationErrors.add("Password is required");
-            }
+            String email = signupRequest.getEmail();
+            String password = signupRequest.getPassword();
+            String name = signupRequest.getName();
+            String confirmPassword = signupRequest.getConfirmPassword();
+
             if (name == null || name.trim().isEmpty()) {
                 validationErrors.add("Name is required");
+            } else if (name.trim().length() > 100) {
+                validationErrors.add("Name cannot exceed 100 characters");
             }
-            if (companyName == null || companyName.trim().isEmpty()) {
-                validationErrors.add("Company name is required");
-            }
-            if (companyAddress == null || companyAddress.trim().isEmpty()) {
-                validationErrors.add("Company address is required");
-            } else if (companyAddress.trim().length() > 500) {
-                validationErrors.add("Company address cannot exceed 500 characters");
-            }
-            // Bank details are optional at signup (G22 resolution: bank profiles are managed via /api/bank-accounts)
 
-            // Return all validation errors at once
+            if (email == null || email.trim().isEmpty()) {
+                validationErrors.add("Email is required");
+            } else if (email.trim().length() > 254) {
+                validationErrors.add("Email cannot exceed 254 characters");
+            } else if (!email.trim().matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
+                validationErrors.add("Email must be valid");
+            }
+
+            if (password == null || password.trim().isEmpty()) {
+                validationErrors.add("Password is required");
+            } else if (password.length() < 6) {
+                validationErrors.add("Password must be at least 6 characters");
+            }
+
+            if (confirmPassword != null && !confirmPassword.trim().isEmpty()) {
+                if (!confirmPassword.equals(password)) {
+                    validationErrors.add("Passwords do not match");
+                }
+            }
+
             if (!validationErrors.isEmpty()) {
                 String errorMessage = String.join(", ", validationErrors);
-                System.err.println("Validation errors: " + errorMessage);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(ApiResponse.error("Validation failed", errorMessage));
-            }
-
-            // Build SignupRequest
-            SignupRequest signupRequest = new SignupRequest();
-            signupRequest.setEmail(email.trim());
-            signupRequest.setPassword(password);
-            signupRequest.setName(name.trim());
-            signupRequest.setCompanyName(companyName.trim());
-            signupRequest.setCompanyAddress(companyAddress.trim());
-            signupRequest.setCompanyLogo(companyLogo);
-            signupRequest.setInvoiceFormat(
-                    invoiceFormat != null && !invoiceFormat.trim().isEmpty() ? invoiceFormat.trim() : "INV-"); // Default format if not provided
-
-            if (bankName != null && !bankName.trim().isEmpty()) {
-                BankDetailsDTO bankDetails = new BankDetailsDTO();
-                bankDetails.setBankName(bankName.trim());
-                if (accountNumber != null) {
-                    bankDetails.setAccountNumber(accountNumber.trim());
-                }
-                if (accountHolderName != null) {
-                    bankDetails.setAccountHolderName(accountHolderName.trim());
-                }
-                if (ifscCode != null) {
-                    bankDetails.setIfscCode(ifscCode.trim());
-                }
-                if (branchName != null && !branchName.trim().isEmpty()) {
-                    bankDetails.setBranchName(branchName.trim());
-                }
-                if (branchCode != null && !branchCode.trim().isEmpty()) {
-                    bankDetails.setBranchCode(branchCode.trim());
-                }
-                if (accountType != null && !accountType.trim().isEmpty()) {
-                    bankDetails.setAccountType(accountType.trim());
-                }
-                signupRequest.setBankDetails(bankDetails);
             }
 
             SignupResponse response = authService.signup(signupRequest);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Signup successful", response));
         } catch (IllegalArgumentException e) {
-            System.err.println("Signup validation error: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error("Signup failed", e.getMessage()));
         } catch (Exception e) {
-            System.err.println("Signup error: " + e.getMessage());
-            e.printStackTrace(); // Log the full error for debugging
             String errorMsg = e.getMessage() != null ? e.getMessage() : "An unexpected error occurred";
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Signup failed", errorMsg));
@@ -287,7 +258,7 @@ public class AuthController {
             }
 
             // Build update request
-            SignupRequest updateRequest = new SignupRequest();
+            CompanyUpdateRequest updateRequest = new CompanyUpdateRequest();
             updateRequest.setCompanyName(companyName);
             updateRequest.setCompanyAddress(companyAddress);
             updateRequest.setCompanyLogo(companyLogo);

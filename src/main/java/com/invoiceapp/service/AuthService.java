@@ -57,10 +57,23 @@ public class AuthService {
     }
 
     public SignupResponse signup(SignupRequest signupRequest) throws Exception {
-        // Validate email and password are provided
+        if (signupRequest == null) {
+            throw new IllegalArgumentException("Signup request body is required");
+        }
+
+        // Validate email
         if (signupRequest.getEmail() == null || signupRequest.getEmail().trim().isEmpty()) {
             throw new IllegalArgumentException("Email is required");
         }
+        String email = signupRequest.getEmail().trim().toLowerCase();
+        if (email.length() > 254) {
+            throw new IllegalArgumentException("Email cannot exceed 254 characters");
+        }
+        if (!email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+
+        // Validate password
         if (signupRequest.getPassword() == null || signupRequest.getPassword().trim().isEmpty()) {
             throw new IllegalArgumentException("Password is required");
         }
@@ -68,106 +81,59 @@ public class AuthService {
             throw new IllegalArgumentException("Password must be at least 6 characters");
         }
 
+        // Validate name / fullName
+        String name = signupRequest.getName();
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Name is required");
+        }
+        name = name.trim();
+        if (name.length() > 100) {
+            throw new IllegalArgumentException("Name cannot exceed 100 characters");
+        }
+
+        // Validate confirmPassword if provided
+        if (signupRequest.getConfirmPassword() != null && !signupRequest.getConfirmPassword().trim().isEmpty()) {
+            if (!signupRequest.getPassword().equals(signupRequest.getConfirmPassword())) {
+                throw new IllegalArgumentException("Passwords do not match");
+            }
+        }
+
         // Check if user already exists
-        if (userRepository.existsByEmail(signupRequest.getEmail().toLowerCase().trim())) {
+        if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already registered");
         }
 
         // Create user
         User user = new User();
-        user.setEmail(signupRequest.getEmail().toLowerCase().trim());
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
-        user.setName(signupRequest.getName().trim());
+        user.setName(name);
         user.setCreatedAt(java.time.LocalDateTime.now());
 
         User savedUser = userRepository.save(user);
 
-        // Store company logo as Base64 for permanent persistence on ephemeral
-        // filesystems like Render
-        String logoUrl = null;
-        if (signupRequest.getCompanyLogo() != null && !signupRequest.getCompanyLogo().isEmpty()) {
-            try {
-                logoUrl = convertToBase64(signupRequest.getCompanyLogo());
-                System.out.println("Logo converted to Base64, length: " + logoUrl.length());
-            } catch (Exception e) {
-                System.err.println("Failed to convert company logo to Base64: " + e.getMessage());
-                e.printStackTrace();
-                // Do NOT fallback to file storage - it won't persist on Render
-                throw new RuntimeException("Failed to process company logo: " + e.getMessage(), e);
-            }
-        }
-
-        // Create bank details entity
-        BankDetails bankDetails = null;
-        if (signupRequest.getBankDetails() != null) {
-            BankDetailsDTO bankDto = signupRequest.getBankDetails();
-            bankDetails = new BankDetails(
-                    bankDto.getBankName(),
-                    bankDto.getAccountNumber(),
-                    bankDto.getAccountHolderName(),
-                    bankDto.getIfscCode(),
-                    bankDto.getSwiftCode(),
-                    bankDto.getBankCode(),
-                    bankDto.getBranchName(),
-                    bankDto.getBranchCode(),
-                    bankDto.getAccountType());
-        }
-
-        // Create company info
-        CompanyInfo companyInfo = new CompanyInfo();
-        companyInfo.setUserId(savedUser.getId());
-        companyInfo.setCompanyName(signupRequest.getCompanyName().trim());
-        companyInfo.setCompanyAddress(signupRequest.getCompanyAddress().trim());
-        companyInfo.setCompanyLogoUrl(logoUrl);
-        companyInfo.setInvoiceFormat(signupRequest.getInvoiceFormat());
-        companyInfo.setFromEmail(signupRequest.getFromEmail());
-        companyInfo.setBankDetails(bankDetails);
-        companyInfo.setCreatedAt(java.time.LocalDateTime.now());
-        companyInfo.setUpdatedAt(java.time.LocalDateTime.now());
-
-        CompanyInfo savedCompanyInfo = companyInfoRepository.save(companyInfo);
-
-        // Update user with company info reference
-        savedUser.setCompanyInfoId(savedCompanyInfo.getId());
-        userRepository.save(savedUser);
-
         // Generate JWT token
         String token = jwtService.generateToken(savedUser.getId(), savedUser.getEmail());
 
-        // Convert to DTOs
-        BankDetailsDTO bankDetailsDTO = null;
-        if (bankDetails != null) {
-            bankDetailsDTO = new BankDetailsDTO();
-            bankDetailsDTO.setBankName(bankDetails.getBankName());
-            bankDetailsDTO.setAccountNumber(bankDetails.getAccountNumber());
-            bankDetailsDTO.setAccountHolderName(bankDetails.getAccountHolderName());
-            bankDetailsDTO.setIfscCode(bankDetails.getIfscCode());
-            bankDetailsDTO.setBranchName(bankDetails.getBranchName());
-            bankDetailsDTO.setBranchCode(bankDetails.getBranchCode());
-            bankDetailsDTO.setAccountType(bankDetails.getAccountType());
-            bankDetailsDTO.setSwiftCode(bankDetails.getSwiftCode());
-        }
-
-        CompanyInfoDTO companyInfoDTO = new CompanyInfoDTO();
-        companyInfoDTO.setId(savedCompanyInfo.getId());
-        companyInfoDTO.setCompanyName(savedCompanyInfo.getCompanyName());
-        companyInfoDTO.setCompanyAddress(savedCompanyInfo.getCompanyAddress());
-        companyInfoDTO.setCompanyLogoUrl(savedCompanyInfo.getCompanyLogoUrl());
-        companyInfoDTO.setFromEmail(savedCompanyInfo.getFromEmail());
-        companyInfoDTO.setInvoiceFormat(savedCompanyInfo.getInvoiceFormat());
-        companyInfoDTO.setBankDetails(bankDetailsDTO);
-
-        return new SignupResponse(token, savedUser.getId(), savedUser.getEmail(), companyInfoDTO);
+        // Return SignupResponse with only account identity fields
+        return new SignupResponse(token, savedUser.getId(), savedUser.getEmail(), savedUser.getName());
     }
 
-    public CompanyInfoDTO updateCompanyInfo(String userId, SignupRequest updateRequest) throws Exception {
+    public CompanyInfoDTO updateCompanyInfo(String userId, CompanyUpdateRequest updateRequest) throws Exception {
         System.out.println("Updating company info for user: " + userId);
         Optional<CompanyInfo> companyOpt = companyInfoRepository.findByUserId(userId);
+        CompanyInfo companyInfo;
+        boolean isNew = false;
+
         if (companyOpt.isEmpty()) {
-            throw new IllegalArgumentException("Company info not found");
+            companyInfo = new CompanyInfo();
+            companyInfo.setUserId(userId);
+            companyInfo.setCreatedAt(java.time.LocalDateTime.now());
+            isNew = true;
+        } else {
+            companyInfo = companyOpt.get();
         }
 
-        CompanyInfo companyInfo = companyOpt.get();
         if (updateRequest.getCompanyName() != null)
             companyInfo.setCompanyName(updateRequest.getCompanyName().trim());
         if (updateRequest.getCompanyAddress() != null)
@@ -198,6 +164,13 @@ public class AuthService {
 
         companyInfo.setUpdatedAt(java.time.LocalDateTime.now());
         CompanyInfo savedCompany = companyInfoRepository.save(companyInfo);
+
+        if (isNew) {
+            userRepository.findById(userId).ifPresent(u -> {
+                u.setCompanyInfoId(savedCompany.getId());
+                userRepository.save(u);
+            });
+        }
 
         // Convert to DTO
         CompanyInfoDTO dto = new CompanyInfoDTO();

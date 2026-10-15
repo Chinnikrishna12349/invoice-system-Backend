@@ -1,10 +1,11 @@
 package com.invoiceapp.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import org.springframework.web.multipart.MultipartFile;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SignupRequest {
     @NotBlank(message = "Email is required")
     @Size(max = 254, message = "Email cannot exceed 254 characters")
@@ -15,25 +16,23 @@ public class SignupRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    @NotBlank(message = "Name is required")
+    private String confirmPassword;
+
+    @Size(max = 100, message = "Name cannot exceed 100 characters")
     private String name;
 
-    @NotBlank(message = "Company name is required")
-    private String companyName;
-
-    @NotBlank(message = "Company address is required")
-    @Size(max = 500, message = "Company address cannot exceed 500 characters")
-    private String companyAddress;
-
-    private String invoiceFormat;
-
-    private String fromEmail;
-
-    private MultipartFile companyLogo; // Optional image file
-
-    private BankDetailsDTO bankDetails;
+    @Size(max = 100, message = "Full name cannot exceed 100 characters")
+    private String fullName;
 
     public SignupRequest() {
+    }
+
+    public SignupRequest(String name, String email, String password, String confirmPassword) {
+        this.name = name;
+        this.fullName = name;
+        this.email = email;
+        this.password = password;
+        this.confirmPassword = confirmPassword;
     }
 
     public String getEmail() {
@@ -52,59 +51,39 @@ public class SignupRequest {
         this.password = password;
     }
 
+    public String getConfirmPassword() {
+        return confirmPassword;
+    }
+
+    public void setConfirmPassword(String confirmPassword) {
+        this.confirmPassword = confirmPassword;
+    }
+
     public String getName() {
-        return name;
+        if (name != null && !name.trim().isEmpty()) {
+            return name;
+        }
+        return fullName;
     }
 
     public void setName(String name) {
         this.name = name;
+        if (this.fullName == null) {
+            this.fullName = name;
+        }
     }
 
-    public String getCompanyName() {
-        return companyName;
+    public String getFullName() {
+        if (fullName != null && !fullName.trim().isEmpty()) {
+            return fullName;
+        }
+        return name;
     }
 
-    public void setCompanyName(String companyName) {
-        this.companyName = companyName;
-    }
-
-    public String getCompanyAddress() {
-        return companyAddress;
-    }
-
-    public void setCompanyAddress(String companyAddress) {
-        this.companyAddress = companyAddress;
-    }
-
-    public String getInvoiceFormat() {
-        return invoiceFormat;
-    }
-
-    public void setInvoiceFormat(String invoiceFormat) {
-        this.invoiceFormat = invoiceFormat;
-    }
-
-    public String getFromEmail() {
-        return fromEmail;
-    }
-
-    public void setFromEmail(String fromEmail) {
-        this.fromEmail = fromEmail;
-    }
-
-    public MultipartFile getCompanyLogo() {
-        return companyLogo;
-    }
-
-    public void setCompanyLogo(MultipartFile companyLogo) {
-        this.companyLogo = companyLogo;
-    }
-
-    public BankDetailsDTO getBankDetails() {
-        return bankDetails;
-    }
-
-    public void setBankDetails(BankDetailsDTO bankDetails) {
-        this.bankDetails = bankDetails;
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+        if (this.name == null) {
+            this.name = fullName;
+        }
     }
 }
