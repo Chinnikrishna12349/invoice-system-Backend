@@ -248,7 +248,7 @@ public class InvoiceDTO {
     }
 
     public Double getGrandTotal() {
-        if (finalAmount != null) {
+        if (finalAmount != null && finalAmount > 0) {
             return finalAmount; // Trust the frontend's final math directly
         }
         double subAndTax = getSubTotal() + getTaxAmount();

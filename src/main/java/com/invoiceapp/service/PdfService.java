@@ -401,7 +401,13 @@ public class PdfService {
                                         || (invoice.getShowConsumptionTax() != null && invoice.getShowConsumptionTax());
                         double taxRate = showTax ? (invoice.getTaxRate() != null ? invoice.getTaxRate() : 0.0) : 0.0;
                         double tax = Math.round((subtotal * (taxRate / 100.0)) * 100.0) / 100.0;
-                        double grandTotal = subtotal + tax;
+                        double roundOff = invoice.getRoundOff() != null ? invoice.getRoundOff() : 0.0;
+                        double calculatedTotal = "japan".equalsIgnoreCase(invoice.getCountry())
+                                        ? Math.round(subtotal + tax + roundOff)
+                                        : Math.round((subtotal + tax + roundOff) * 100.0) / 100.0;
+                        double grandTotal = (invoice.getFinalAmount() != null && invoice.getFinalAmount() > 0)
+                                        ? invoice.getFinalAmount()
+                                        : calculatedTotal;
 
                         totalTable.addCell(createTotalCell("SubTotal", regularFont, 11));
                         totalTable.addCell(createTotalCell(formatCurrency(subtotal, invoice.getCountry(), false),
@@ -415,6 +421,12 @@ public class PdfService {
 
                                 totalTable.addCell(createTotalCell(taxLabel, regularFont, 11));
                                 totalTable.addCell(createTotalCell(formatCurrency(tax, invoice.getCountry(), false),
+                                                regularFont, 11));
+                        }
+
+                        if (Math.abs(roundOff) > 0.001) {
+                                totalTable.addCell(createTotalCell("Round Off", regularFont, 11));
+                                totalTable.addCell(createTotalCell(formatCurrency(roundOff, invoice.getCountry(), false),
                                                 regularFont, 11));
                         }
 
